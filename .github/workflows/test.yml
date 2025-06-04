@@ -1,0 +1,64 @@
+name: Run Server & Client Tests on PR
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # Server tests
+      - name: Install server dependencies
+        run: |
+          cd server
+          npm ci
+
+      - name: Run server tests with coverage
+        run: |
+          cd server
+          npm run test:coverage
+
+      - name: Upload server coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: server-coverage-report
+          path: server/coverage/
+
+      # Client tests
+      - name: Install client dependencies
+        run: |
+          cd client
+          npm ci
+
+      - name: Run client tests with coverage
+        run: |
+          cd client
+          npm run test:coverage
+
+      - name: Upload client coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: client-coverage-report
+          path: client/coverage/
+
+      # Run Cypress e2e tests
+      - name: Run Cypress tests
+        run: |
+          cd client
+          npm run cypress:run
