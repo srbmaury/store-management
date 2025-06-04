@@ -7,9 +7,9 @@ describe('Auth Flow: Signup then Login', () => {
 
   beforeEach(() => {
     // Clear test data if your backend supports it
-    // cy.request('GET', 'http://localhost:5000/api/test');
-    cy.request('DELETE', 'http://localhost:5000/api/test/clear', { email: adminEmail });
-    cy.request('DELETE', 'http://localhost:5000/api/test/clear', { email: staffEmail });
+    // cy.request('GET', 'https://store-management-backend-peg6.onrender.com0/api/test');
+    cy.request('DELETE', 'https://store-management-backend-peg6.onrender.com0/api/test/clear', { email: adminEmail });
+    cy.request('DELETE', 'https://store-management-backend-peg6.onrender.com0/api/test/clear', { email: staffEmail });
   });
 
   it('Registers a new admin user and staff user, handles join requests, and verifies approval flow', () => {
@@ -29,7 +29,7 @@ describe('Auth Flow: Signup then Login', () => {
     cy.url().should('include', '/dashboard')
     cy.contains('Welcome, Test Admin!').should('be.visible')
 
-    cy.request('DELETE', 'http://localhost:5000/api/test/clear', { email: staffEmail })
+    cy.request('DELETE', 'https://store-management-backend-peg6.onrender.com0/api/test/clear', { email: staffEmail })
     cy.visit('https://store-management-frontend-skek.onrender.com/register')
 
     cy.get('select[name=role]').select('staff')
@@ -108,7 +108,7 @@ describe('Auth Flow: Signup then Login', () => {
     cy.url().should('include', '/dashboard')
     cy.contains('Welcome, Test Admin!').should('be.visible')
 
-    cy.request('DELETE', 'http://localhost:5000/api/test/clear', { email: staffEmail })
+    cy.request('DELETE', 'https://store-management-backend-peg6.onrender.com0/api/test/clear', { email: staffEmail })
     cy.visit('https://store-management-frontend-skek.onrender.com/register')
 
     cy.get('select[name=role]').select('staff')
