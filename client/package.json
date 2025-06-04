@@ -6,13 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
     "lint": "eslint .",
+    "preview": "vite preview",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
-    "cypress:open": "cypress open",
-    "cypress:run": "cypress run",
-    "test:e2e": "start-server-and-test dev http://localhost:5173 cypress:run"
+    "cypress:open": "npx cypress open",
+    "cypress:run": "npx cypress run"
   },
   "dependencies": {
     "@salesforce-ux/design-system": "^2.27.1",
@@ -43,7 +42,6 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "jsdom": "^26.1.0",
-    "start-server-and-test": "^2.0.12",
     "vite": "^6.3.5",
     "vitest": "^3.1.4"
   }

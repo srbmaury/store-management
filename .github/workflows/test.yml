@@ -12,11 +12,11 @@ jobs:
     env:
       NODE_ENV: test
       MONGO_TEST_URI: ${{ secrets.MONGO_TEST_URI }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET}}
 
     strategy:
       matrix:
-        node-version: [20.x]
+        node-version: [18.x]
 
     steps:
       - name: Checkout repository
@@ -27,18 +27,35 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      # Install dependencies
+      # Server setup
       - name: Install server dependencies
         run: |
           cd server
           npm ci
 
+      - name: Start server in background
+        run: |
+          cd server
+          npm run dev &  # Run the server in the background
+
+      # Client setup
       - name: Install client dependencies
         run: |
           cd client
           npm ci
 
-      # Run unit tests
+      - name: Start client in background
+        run: |
+          cd client
+          npm run dev &  # Run the client in the background
+
+      # Wait for server and client to be ready
+      - name: Wait for client and server to be ready
+        run: |
+          # Add a sleep to wait for the apps to start (you can also use wait-on or other tools)
+          sleep 15  # Adjust this based on how long your client and server take to start
+
+      # Server tests
       - name: Run server tests with coverage
         run: |
           cd server
@@ -50,6 +67,7 @@ jobs:
           name: server-coverage-report
           path: server/coverage/
 
+      # Client tests
       - name: Run client tests with coverage
         run: |
           cd client
@@ -61,8 +79,8 @@ jobs:
           name: client-coverage-report
           path: client/coverage/
 
-      # E2E Tests
-      - name: Run Cypress e2e tests
+      # Run Cypress e2e tests
+      - name: Run Cypress tests
         run: |
           cd client
-          npm run test:e2e
+          npm run cypress:run
