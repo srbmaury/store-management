@@ -71,8 +71,8 @@ jobs:
           name: client-coverage-report
           path: client/coverage/
 
-      # Run Cypress e2e tests (Commenting out till a solution is found)
-      # - name: Run Cypress tests
-      #   run: |
-      #     cd client
-      #     npm run cypress:run
+      # Run Cypress e2e tests
+      - name: Run Cypress tests
+        run: |
+          cd client
+          npm run cypress:run

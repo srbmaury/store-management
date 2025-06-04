@@ -10,7 +10,7 @@ describe('Inventory Page Admin Flow', () => {
     });
 
     it('Add items to inventory, update and delete items from inventory, upload inventory Excel file and filter items', () => {
-        cy.visit('http://localhost:5173/register');
+        cy.visit('https://store-management-frontend-skek.onrender.com/register');
 
         cy.get('select[name=role]').select('admin');
         cy.get('input[name=name]').type('Inventory Admin');
@@ -27,7 +27,7 @@ describe('Inventory Page Admin Flow', () => {
         cy.contains('Welcome, Inventory Admin!').should('be.visible');
 
         // Navigate to inventory page
-        cy.visit('http://localhost:5173/inventory');
+        cy.visit('https://store-management-frontend-skek.onrender.com/inventory');
 
         // Add first item
         cy.contains('button', 'Add New Item').click();
