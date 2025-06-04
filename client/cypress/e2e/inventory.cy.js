@@ -6,7 +6,7 @@ describe('Inventory Page Admin Flow', () => {
 
     beforeEach(() => {
         // Clear test data if your backend supports it
-        cy.request('DELETE', 'https://store-management-backend-peg6.onrender.com0/api/test/clear', { email: adminEmail });
+        cy.request('DELETE', 'https://store-management-backend-peg6.onrender.com/api/test/clear', { email: adminEmail });
     });
 
     it('Add items to inventory, update and delete items from inventory, upload inventory Excel file and filter items', () => {
