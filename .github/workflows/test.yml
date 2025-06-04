@@ -23,36 +23,54 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      # Server tests
+      # Server setup
       - name: Install server dependencies
         run: |
           cd server
           npm ci
 
+      - name: Start server in background
+        run: |
+          cd server
+          npm run dev &  # Run the server in the background
+
+      # Client setup
+      - name: Install client dependencies
+        run: |
+          cd client
+          npm ci
+
+      - name: Start client in background
+        run: |
+          cd client
+          npm run dev &  # Run the client in the background
+
+      # Wait for server and client to be ready
+      - name: Wait for client and server to be ready
+        run: |
+          # Add a sleep to wait for the apps to start (you can also use wait-on or other tools)
+          sleep 15  # Adjust this based on how long your client and server take to start
+
+      # Server tests
       - name: Run server tests with coverage
         run: |
           cd server
           npm run test:coverage
 
       - name: Upload server coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: server-coverage-report
           path: server/coverage/
 
       # Client tests
-      - name: Install client dependencies
-        run: |
-          cd client
-          npm ci
-
       - name: Run client tests with coverage
         run: |
           cd client
           npm run test:coverage
 
       - name: Upload client coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: client-coverage-report
           path: client/coverage/
