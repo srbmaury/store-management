@@ -7,9 +7,12 @@ on:
       - master
 
 jobs:
-  test:
     runs-on: ubuntu-latest
-
+    env:
+      NODE_ENV: test
+      MONGO_TEST_URI: ${{ secrets.MONGO_TEST_URI }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET}}
+      
     strategy:
       matrix:
         node-version: [18.x]
