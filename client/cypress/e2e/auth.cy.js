@@ -13,8 +13,8 @@ describe('Auth Flow: Signup then Login', () => {
   });
 
   it('Registers a new admin user and staff user, handles join requests, and verifies approval flow', () => {
-    cy.visit('https://store-management-frontend-skek.onrender.com/register')
-
+    cy.visit('https://store-management-frontend-skek.onrender.com')
+    cy.contains('button', 'Register').click();
     cy.get('select[name=role]').select('admin')
     cy.get('input[name=name]').type('Test Admin')
     cy.get('input[name=phone]').type('+911234567890')
@@ -30,7 +30,8 @@ describe('Auth Flow: Signup then Login', () => {
     cy.contains('Welcome, Test Admin!').should('be.visible')
 
     cy.request('DELETE', 'https://store-management-backend-peg6.onrender.com/api/test/clear', { email: staffEmail })
-    cy.visit('https://store-management-frontend-skek.onrender.com/register')
+    cy.visit('https://store-management-frontend-skek.onrender.com')
+    cy.contains('button', 'Register').click()
 
     cy.get('select[name=role]').select('staff')
     cy.get('input[name=name]').type('Test Staff')
@@ -53,7 +54,7 @@ describe('Auth Flow: Signup then Login', () => {
       cy.contains('.slds-badge', 'Pending').should('be.visible')
     })
 
-    cy.visit('https://store-management-frontend-skek.onrender.com/login')
+    cy.visit('https://store-management-frontend-skek.onrender.com')
 
     cy.get('input[name=email]').type(adminEmail)
     cy.get('input[name=password]').type(password)
@@ -75,7 +76,7 @@ describe('Auth Flow: Signup then Login', () => {
       cy.contains('button', 'Approve').should('be.visible').click()
     })
 
-    cy.visit('https://store-management-frontend-skek.onrender.com/login')
+    cy.visit('https://store-management-frontend-skek.onrender.com')
 
     cy.get('input[name=email]').type(staffEmail)
     cy.get('input[name=password]').type(password)
@@ -92,7 +93,8 @@ describe('Auth Flow: Signup then Login', () => {
   })
 
   it('Registers a new admin user and staff user, handles join requests, and verifies rejection flow', () => {
-    cy.visit('https://store-management-frontend-skek.onrender.com/register')
+    cy.visit('https://store-management-frontend-skek.onrender.com')
+    cy.contains('button', 'Register').click()
 
     cy.get('select[name=role]').select('admin')
     cy.get('input[name=name]').type('Test Admin')
@@ -109,7 +111,8 @@ describe('Auth Flow: Signup then Login', () => {
     cy.contains('Welcome, Test Admin!').should('be.visible')
 
     cy.request('DELETE', 'https://store-management-backend-peg6.onrender.com/api/test/clear', { email: staffEmail })
-    cy.visit('https://store-management-frontend-skek.onrender.com/register')
+    cy.visit('https://store-management-frontend-skek.onrender.com')
+    cy.contains('button', 'Register').click()
 
     cy.get('select[name=role]').select('staff')
     cy.get('input[name=name]').type('Test Staff')
@@ -132,7 +135,7 @@ describe('Auth Flow: Signup then Login', () => {
       cy.contains('.slds-badge', 'Pending').should('be.visible')
     })
 
-    cy.visit('https://store-management-frontend-skek.onrender.com/login')
+    cy.visit('https://store-management-frontend-skek.onrender.com')
 
     cy.get('input[name=email]').type(adminEmail)
     cy.get('input[name=password]').type(password)
@@ -151,7 +154,7 @@ describe('Auth Flow: Signup then Login', () => {
       cy.contains('button', 'Reject').should('be.visible').click()
     })
 
-    cy.visit('https://store-management-frontend-skek.onrender.com/login')
+    cy.visit('https://store-management-frontend-skek.onrender.com')
     cy.get('input[name=email]').type(staffEmail)
     cy.get('input[name=password]').type(password)
     cy.get('button[type=submit]').click()
