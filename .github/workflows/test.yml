@@ -7,16 +7,13 @@ on:
       - master
 
 jobs:
-  test:
+  combined-tests:
+    name: Server & Client Combined Tests
     runs-on: ubuntu-latest
     env:
       NODE_ENV: test
       MONGO_TEST_URI: ${{ secrets.MONGO_TEST_URI }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET}}
-
-    strategy:
-      matrix:
-        node-version: [18.x]
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
     steps:
       - name: Checkout repository
@@ -25,7 +22,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 18.x
 
       # Server setup
       - name: Install server dependencies
@@ -36,7 +33,7 @@ jobs:
       - name: Start server in background
         run: |
           cd server
-          npm run dev &  # Run the server in the background
+          npm run dev &
 
       # Client setup
       - name: Install client dependencies
@@ -47,15 +44,11 @@ jobs:
       - name: Start client in background
         run: |
           cd client
-          npm run dev &  # Run the client in the background
+          npm run dev &
 
-      # Wait for server and client to be ready
       - name: Wait for client and server to be ready
-        run: |
-          # Add a sleep to wait for the apps to start (you can also use wait-on or other tools)
-          sleep 15  # Adjust this based on how long your client and server take to start
+        run: sleep 15  # You may replace with wait-on for more precision
 
-      # Server tests
       - name: Run server tests with coverage
         run: |
           cd server
@@ -67,7 +60,6 @@ jobs:
           name: server-coverage-report
           path: server/coverage/
 
-      # Client tests
       - name: Run client tests with coverage
         run: |
           cd client
