@@ -103,8 +103,11 @@ A robust store management system designed to streamline inventory, sales, and st
 ## 🧪 Running the Project
 
 ```bash
+git clone https://github.com/srbmaury/store-management-copy.git
+
 # Frontend
 cd client
+npm install            # install the dependencies
 npm run dev            # Start the development server
 npm run test           # Run unit tests
 npm run test:coverage  # Generate code coverage report
@@ -112,6 +115,7 @@ npm run cypress:open   # Open Cypress for end-to-end testing
 
 # Backend
 cd server
+npm install            # install the dependencies
 npm run dev            # Start the backend server
 npm run test           # Run backend tests
 npm run test:coverage  # Generate backend code coverage report
