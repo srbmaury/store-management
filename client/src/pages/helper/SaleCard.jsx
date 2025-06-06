@@ -42,7 +42,7 @@ export default function SaleCard({ sale }) {
 					})}
 				</ul>
 			</div>
-			{user._id === sale.storeOwnerId && (
+			{user._id === sale.store.owner._id && (
 				<p
 					className="slds-text-color_weak slds-m-bottom_none"
 					style={{ margin: 0, opacity: 0.5 }}

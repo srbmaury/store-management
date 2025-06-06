@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import API from '../utils/api';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Spinner from '../utils/Spinner';
 import * as XLSX from 'xlsx'; // Add this import
 
@@ -28,18 +28,21 @@ export default function InventoryPage() {
 	const [maxStock, setMaxStock] = useState('');
 
 	const navigate = useNavigate();
+	const { storeId } = useParams();
 
 	const fetchInventory = async () => {
 		setLoading(true);
 		try {
 			const { data } = await API.get('/inventory', {
 				params: {
+					storeId,
+					category: categoryFilter,
+					search: searchTerm,
 					page,
 					limit,
-					search: searchTerm,
-					category: categoryFilter,
 					minStock: minStock || undefined,
 					maxStock: maxStock || undefined,
+					
 				},
 			});
 			setItems(data.items);
@@ -95,7 +98,7 @@ export default function InventoryPage() {
 						stock: row.stock || 0,
 						category: row.category || '',
 					};
-					const { data: createdItem } = await API.post('/inventory', newItem);
+					const { data: createdItem } = await API.post('/inventory', { ...newItem, storeId });
 					setItems((prev) => [...prev, createdItem]);
 				}
 			}
@@ -103,8 +106,7 @@ export default function InventoryPage() {
 			toast.success('Inventory updated from Excel');
 			await fetchInventory();
 		} catch (err) {
-			console.error(err);
-			toast.error('Failed to read Excel file');
+			toast.error(err?err.message:'Failed to read Excel file');
 		}
 	};
 
@@ -122,7 +124,7 @@ export default function InventoryPage() {
 		try {
 			if (editingId) {
 				// Update existing item
-				const { data } = await API.put(`/inventory/${editingId}`, preparedForm);
+				const { data } = await API.put(`/inventory/${editingId}`, {...preparedForm, storeId});
 				setItems((prev) =>
 					prev.map((item) => (item._id === editingId ? data : item))
 				);
@@ -135,13 +137,13 @@ export default function InventoryPage() {
 						...preparedForm,
 						stock: Number(existingItem.stock) + Number(form.stock),
 					};
-					const { data } = await API.put(`/inventory/${existingItem._id}`, updatedItemData);
+					const { data } = await API.put(`/inventory/${existingItem._id}`, {...updatedItemData, storeId});
 					setItems((prev) =>
 						prev.map((item) => (item._id === existingItem._id ? data : item))
 					);
 					toast.success('SKU exists - Stock added and item updated');
 				} else {
-					const { data } = await API.post('/inventory', preparedForm);
+					const { data } = await API.post('/inventory', {...preparedForm, storeId});
 					setItems((prev) => [...prev, data]);
 					toast.success('Item added');
 				}
@@ -187,7 +189,7 @@ export default function InventoryPage() {
 			<div className="slds-m-bottom_large">
 				<button
 					className="slds-button slds-button_neutral"
-					onClick={() => navigate('/dashboard')}
+					onClick={() => navigate(`/dashboard/${storeId}`)}
 					disabled={loading}
 				>
 					← Back to Dashboard

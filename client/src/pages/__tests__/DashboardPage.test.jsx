@@ -85,6 +85,19 @@ describe('DashboardPage', () => {
         render(<DashboardPage />);
 
         await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Failed to fetch');
+        });
+
+        // Spinner disappears after error
+        expect(screen.queryByTestId('spinner')).not.toBeInTheDocument();
+        expect(screen.getByTestId('dashboard-layout')).toBeInTheDocument();
+    });
+
+    it('handles API failure gracefully when no error is thrown', async () => {
+        API.get.mockRejectedValue();
+        render(<DashboardPage />);
+
+        await waitFor(() => {
             expect(toast.error).toHaveBeenCalledWith('Failed to fetch dashboard data');
         });
 

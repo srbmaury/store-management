@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react';
 import API from "../utils/api";
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const AdminJoinRequests = () => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+	const { storeId } = useParams();
 
     const fetchJoinRequests = async () => {
         setLoading(true);
         try {
-            const { data } = await API.get('/join-requests/pending');
+            const { data } = await API.get(`/join-requests/pending?storeId=${storeId}`);
             setRequests(data);
         } catch (err) {
             toast.error(err?.response?.data?.message || 'Failed to load join requests');
@@ -28,7 +29,7 @@ const AdminJoinRequests = () => {
             toast.success(`Request ${status} successfully`);
         } catch (err) {
             toast.error(
-                err?.response?.data?.message || `Failed to ${status} request`
+                err?.response?.data?.message || `Failed to ${status.replace(/ed$/, '')} request`
             );
         }
     };
@@ -44,7 +45,7 @@ const AdminJoinRequests = () => {
             <div className="slds-m-bottom_large">
                 <button
                     className="slds-button slds-button_neutral"
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() => navigate(`/dashboard/${storeId}`)}
                     disabled={loading}
                 >
                     ← Back to Dashboard
@@ -59,7 +60,6 @@ const AdminJoinRequests = () => {
                         <tr className="slds-line-height_reset">
                             <th>Name</th>
                             <th>Email</th>
-                            <th>Message</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -68,7 +68,6 @@ const AdminJoinRequests = () => {
                             <tr key={req._id}>
                                 <td>{req.staffId?.name}</td>
                                 <td>{req.staffId?.email}</td>
-                                <td>{req.message || '—'}</td>
                                 <td>
                                     <button
                                         className="slds-button slds-button_success slds-m-right_small"

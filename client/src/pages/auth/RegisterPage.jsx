@@ -14,7 +14,7 @@ export default function RegisterPage() {
         try {
             const { data } = await API.post('/auth/register', form);
             login(data);
-            data.role === 'admin' ? navigate('/dashboard') : navigate('/storeListing');
+            data.role === 'admin' ? navigate('/myStores') : navigate('/storeListing');
             toast.success('Registration successful! Welcome 😊');
         } catch (err) {
             toast.error(err.response?.data?.message || 'Registration failed');

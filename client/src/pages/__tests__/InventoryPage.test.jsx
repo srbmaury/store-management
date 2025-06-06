@@ -48,6 +48,7 @@ describe('InventoryPage', () => {
     ];
 
     beforeEach(() => {
+        API.get.mockReset();
         API.get.mockResolvedValue({
             data: {
                 items: mockItems,
@@ -68,6 +69,16 @@ describe('InventoryPage', () => {
         await waitFor(() => {
             expect(screen.getByText('Item A')).toBeInTheDocument();
             expect(screen.getByText('Item B')).toBeInTheDocument();
+        });
+    });
+
+    it('shows toast error if API.get fails with error', async () => {
+        API.get.mockRejectedValueOnce(new Error('API failed'));
+
+        renderWithRouter(<InventoryPage />);
+
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Failed to fetch inventory');
         });
     });
 
@@ -137,6 +148,131 @@ describe('InventoryPage', () => {
                 stock: 20,
                 category: 'Books',
             }));
+        });
+    });
+
+    it('adds stock to existing SKU instead of creating a new item', async () => {
+        // Mock initial GET
+        API.get.mockResolvedValueOnce({
+            data: {
+                items: [
+                    { _id: '1', name: 'Item A', sku: 'SKU001', price: 100, stock: 10, category: 'Electronics' },
+                ],
+                totalPages: 1,
+            },
+        });
+
+        // Mock PUT to update existing item with incremented stock
+        API.put.mockResolvedValueOnce({
+            data: {
+                _id: '1',
+                name: 'Item A',
+                sku: 'SKU001',
+                price: 100,
+                stock: 15, // updated from 10 to 15
+                category: 'Electronics',
+            },
+        });
+
+        // Mock GET after update
+        API.get.mockResolvedValueOnce({
+            data: {
+                items: [
+                    { _id: '1', name: 'Item A', sku: 'SKU001', price: 100, stock: 15, category: 'Electronics' },
+                ],
+                totalPages: 1,
+            },
+        });
+
+        renderWithRouter(<InventoryPage />);
+
+        await waitFor(() => screen.getByText('Item A'));
+
+        await userEvent.click(screen.getByText(/Add New Item/i));
+
+        // Fill the form with same SKU but additional stock
+        await userEvent.type(screen.getByLabelText(/Name/i), 'Item A');
+        await userEvent.type(screen.getByLabelText(/SKU/i), 'SKU001'); // same SKU
+        await userEvent.type(screen.getByLabelText(/Price/i), '100'); // same price
+        await userEvent.type(screen.getByLabelText(/Stock/i), '5'); // additional stock
+        await userEvent.type(screen.getByLabelText(/Category/i), 'Electronics');
+
+        await userEvent.click(screen.getByRole('button', { name: /^Add$/i }));
+
+        await waitFor(() => {
+            expect(API.put).toHaveBeenCalledTimes(1);
+            expect(API.put).toHaveBeenCalledWith(
+                '/inventory/1',
+                expect.objectContaining({
+                    sku: 'SKU001',
+                    stock: 15, // existing 10 + new 5
+                })
+            );
+            expect(toast.success).toHaveBeenCalledWith('SKU exists - Stock added and item updated');
+        });
+    });
+
+    it('shows error if POST fails for new item', async () => {
+        API.get.mockResolvedValueOnce({
+            data: {
+                items: [], // No matching SKU
+                totalPages: 1,
+            },
+        });
+
+        API.post.mockRejectedValueOnce({
+            response: {
+                data: { message: 'Create failed' },
+            },
+        });
+
+        renderWithRouter(<InventoryPage />);
+
+        await waitFor(() => screen.getByText(/Add New Item/i));
+
+        await userEvent.click(screen.getByText(/Add New Item/i));
+        await userEvent.type(screen.getByLabelText(/Name/i), 'Item X');
+        await userEvent.type(screen.getByLabelText(/SKU/i), 'SKU999');
+        await userEvent.type(screen.getByLabelText(/Price/i), '123');
+        await userEvent.type(screen.getByLabelText(/Stock/i), '8');
+        await userEvent.type(screen.getByLabelText(/Category/i), 'Misc');
+
+        await userEvent.click(screen.getByRole('button', { name: /^Add$/i }));
+
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Save failed: Create failed');
+        });
+    });
+
+    it('shows error if POST fails for new item but no error is thrown', async () => {
+        API.get.mockResolvedValueOnce({
+            data: {
+                items: [], // No matching SKU
+                totalPages: 1,
+            },
+        });
+
+        API.post.mockRejectedValueOnce({
+            response: {
+                data: ''
+            },
+        });
+
+        renderWithRouter(<InventoryPage />);
+
+        await waitFor(() => screen.getByText(/Add New Item/i));
+
+        await userEvent.click(screen.getByText(/Add New Item/i));
+        await userEvent.type(screen.getByLabelText(/Name/i), 'Item X');
+        await userEvent.type(screen.getByLabelText(/SKU/i), 'SKU999');
+        await userEvent.type(screen.getByLabelText(/Price/i), '123');
+        await userEvent.type(screen.getByLabelText(/Stock/i), '8');
+        await userEvent.type(screen.getByLabelText(/Category/i), 'Misc');
+
+        await userEvent.click(screen.getByRole('button', { name: /^Add$/i }));
+
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Save failed: Unknown error');
         });
     });
 
@@ -234,6 +370,38 @@ describe('InventoryPage', () => {
         });
     });
 
+    it('shows error if SKU exists but PUT fails', async () => {
+        API.get.mockResolvedValueOnce({
+            data: {
+                items: [{ _id: '1', name: 'Item A', sku: 'SKU001', price: 100, stock: 5, category: 'Toys' }],
+                totalPages: 1,
+            },
+        });
+
+        API.put.mockRejectedValueOnce({
+            response: {
+                data: { message: 'Update failed due to server error' },
+            },
+        });
+
+        renderWithRouter(<InventoryPage />);
+
+        await waitFor(() => screen.getByText('Item A'));
+
+        await userEvent.click(screen.getByText(/Add New Item/i));
+        await userEvent.type(screen.getByLabelText(/Name/i), 'Item A');
+        await userEvent.type(screen.getByLabelText(/SKU/i), 'SKU001');
+        await userEvent.type(screen.getByLabelText(/Price/i), '100');
+        await userEvent.type(screen.getByLabelText(/Stock/i), '10');
+        await userEvent.type(screen.getByLabelText(/Category/i), 'Toys');
+
+        await userEvent.click(screen.getByRole('button', { name: /^Add$/i }));
+
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Save failed: Update failed due to server error');
+        });
+    });
+
     it('deletes an item after confirmation', async () => {
         vi.spyOn(window, 'confirm').mockReturnValue(true);
         API.delete.mockResolvedValue({});
@@ -251,6 +419,66 @@ describe('InventoryPage', () => {
         window.confirm.mockRestore();
     });
 
+    it('does not delete if confirmation is cancelled', async () => {
+        window.confirm = vi.fn(() => false); // Simulate user clicking "Cancel"
+
+        API.get.mockResolvedValueOnce({
+            data: { items: [{ _id: '1', name: 'Item A', sku: 'SKU001', stock: 10, price: 100, category: 'Toys' }], totalPages: 1 }
+        });
+
+        renderWithRouter(<InventoryPage />);
+
+        await waitFor(() => screen.getByText('Item A'));
+
+        const deleteBtn = screen.getByRole('button', { name: /delete/i });
+        await userEvent.click(deleteBtn);
+
+        expect(API.delete).not.toHaveBeenCalled();
+        expect(toast.success).not.toHaveBeenCalled();
+    });
+
+    it('shows error toast on delete failure', async () => {
+        window.confirm = vi.fn(() => true);
+
+        API.get.mockResolvedValueOnce({
+            data: { items: [{ _id: '1', name: 'Item A', sku: 'SKU001', stock: 10, price: 100, category: 'Toys' }], totalPages: 1 }
+        });
+
+        API.delete.mockRejectedValueOnce(new Error('Server error'));
+
+        renderWithRouter(<InventoryPage />);
+
+        await waitFor(() => screen.getByText('Item A'));
+
+        const deleteBtn = screen.getByRole('button', { name: /delete/i });
+        await userEvent.click(deleteBtn);
+
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Delete failed');
+        });
+    });
+
+    it('handles delete gracefullty when no error is thrown', async () => {
+        window.confirm = vi.fn(() => true);
+
+        API.get.mockResolvedValueOnce({
+            data: { items: [{ _id: '1', name: 'Item A', sku: 'SKU001', stock: 10, price: 100, category: 'Toys' }], totalPages: 1 }
+        });
+
+        API.delete.mockRejectedValueOnce();
+
+        renderWithRouter(<InventoryPage />);
+
+        await waitFor(() => screen.getByText('Item A'));
+
+        const deleteBtn = screen.getByRole('button', { name: /delete/i });
+        await userEvent.click(deleteBtn);
+
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Unknown error occurred');
+        });
+    });
+
     it('filters items using search inputs', async () => {
         renderWithRouter(<InventoryPage />);
 
@@ -263,6 +491,48 @@ describe('InventoryPage', () => {
             expect(API.get).toHaveBeenCalledWith('/inventory', expect.objectContaining({
                 params: expect.objectContaining({ search: 'Laptop' }),
             }));
+        });
+    });
+
+    it('filters items by category input', async () => {
+        renderWithRouter(<InventoryPage />);
+
+        await waitFor(() => screen.getByText('Item A'));
+
+        const categoryInput = screen.getByPlaceholderText(/Category/i);
+        fireEvent.change(categoryInput, { target: { value: 'Electronics' } });
+
+        await waitFor(() => {
+            expect(API.get).toHaveBeenCalledWith(
+                '/inventory',
+                expect.objectContaining({
+                    params: expect.objectContaining({ category: 'Electronics' }),
+                })
+            );
+        });
+    });
+
+    it('filters items by minStock and maxStock inputs', async () => {
+        renderWithRouter(<InventoryPage />);
+
+        await waitFor(() => screen.getByText('Item A'));
+
+        const minStockInput = screen.getByPlaceholderText(/Min Stock/i);
+        const maxStockInput = screen.getByPlaceholderText(/Max Stock/i);
+
+        // Change minStock input
+        fireEvent.change(minStockInput, { target: { value: '5' } });
+
+        // Change maxStock input
+        fireEvent.change(maxStockInput, { target: { value: '20' } });
+
+        await waitFor(() => {
+            expect(API.get).toHaveBeenCalledWith(
+                '/inventory',
+                expect.objectContaining({
+                    params: expect.objectContaining({ minStock: '5', maxStock: '20' }),
+                })
+            );
         });
     });
 
@@ -332,5 +602,95 @@ describe('InventoryPage', () => {
             // Toast success called
             expect(toast.success).toHaveBeenCalledWith('Inventory updated from Excel');
         });
+    });
+
+    it('shows unknown error toast if error is falsy', async () => {
+        API.get.mockRejectedValueOnce(undefined);
+
+        renderWithRouter(<InventoryPage />);
+
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Unknown error occurred');
+        });
+    });
+
+    it('shows error toast if Excel parsing fails', async () => {
+        // Make XLSX.read throw an error
+        XLSX.read.mockImplementation(() => {
+            throw new Error('Invalid Excel file');
+        });
+
+        // Create mock file
+        const file = new File(['dummy'], 'bad.xlsx', {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        });
+        file.arrayBuffer = vi.fn().mockResolvedValue(new ArrayBuffer(8));
+
+        // Render component
+        renderWithRouter(<InventoryPage />);
+
+        // Wait for initial load
+        await waitFor(() => expect(API.get).toHaveBeenCalled());
+
+        // Upload the bad file
+        const fileInput = screen.getByTestId('excel-upload-input');
+        fireEvent.change(fileInput, { target: { files: [file] } });
+
+        // Wait for error toast
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Invalid Excel file');
+        });
+    });
+
+    it('paginates items correctly', async () => {
+        const mockItemsPage1 = Array.from({ length: 5 }, (_, i) => ({ _id: `id${i + 1}`, name: `Item ${i + 1}` }));
+        const mockItemsPage2 = Array.from({ length: 5 }, (_, i) => ({ _id: `id${i + 6}`, name: `Item ${i + 6}` }));
+
+        // Mock first page response
+        API.get.mockResolvedValueOnce({
+            data: { items: mockItemsPage1, totalPages: 2 }
+        });
+
+        renderWithRouter(<InventoryPage />);
+
+        // Wait for first page items to appear
+        await waitFor(() => expect(screen.getByText('Item 1')).toBeInTheDocument());
+
+        // Verify page 1 info and button states
+        expect(screen.getByText(/Page 1 of 2/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Previous/i })).toBeDisabled();
+        expect(screen.getByRole('button', { name: /Next/i })).toBeEnabled();
+
+        // Mock second page response when Next is clicked
+        API.get.mockResolvedValueOnce({
+            data: { items: mockItemsPage2, totalPages: 2 }
+        });
+
+        // Click Next page button
+        fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+
+        // Wait for second page items
+        await waitFor(() => expect(screen.getByText('Item 6')).toBeInTheDocument());
+
+        // Verify page 2 info and button states
+        expect(screen.getByText(/Page 2 of 2/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Previous/i })).toBeEnabled();
+        expect(screen.getByRole('button', { name: /Next/i })).toBeDisabled();
+
+        // Mock first page response again when Previous is clicked
+        API.get.mockResolvedValueOnce({
+            data: { items: mockItemsPage1, totalPages: 2 }
+        });
+
+        // Click Previous page button
+        fireEvent.click(screen.getByRole('button', { name: /Previous/i }));
+
+        // Wait for first page items again
+        await waitFor(() => expect(screen.getByText('Item 1')).toBeInTheDocument());
+
+        // Verify back to page 1
+        expect(screen.getByText(/Page 1 of 2/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Previous/i })).toBeDisabled();
+        expect(screen.getByRole('button', { name: /Next/i })).toBeEnabled();
     });
 });

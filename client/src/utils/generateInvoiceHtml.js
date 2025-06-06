@@ -1,5 +1,5 @@
 export function generateInvoiceHtml(sale) {
-    return `
+	return `
     <html>
       <head>
         <title>Invoice</title>

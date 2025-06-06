@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext } from 'react';
 import API from '../utils/api';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Spinner from '../utils/Spinner';
 import Items from './helper/Items';
 import SaleSummary from './helper/SaleSummary';
@@ -14,6 +14,7 @@ export default function SalesPage() {
     const [selectedItems, setSelectedItems] = useState([]);
     const [customerName, setCustomerName] = useState('Store Customer');
     const [loading, setLoading] = useState(true);
+	const { storeId } = useParams();
 
     const {
         setSalesHistory,
@@ -35,7 +36,7 @@ export default function SalesPage() {
         setLoading(true);
         try {
             const [{ data: inventoryData }, { data: salesData }] = await Promise.all([
-                API.get('/inventory'),
+                API.get('/inventory', { params: { storeId } }),
                 API.get(`/sales?page=${salesPage}&limit=${salesLimit}`),
             ]);
             setInventory(inventoryData.items);
@@ -143,6 +144,7 @@ export default function SalesPage() {
                 })),
                 totalAmount,
                 customerName,
+                storeId
             };
 
             await API.post('/sales', payload);
@@ -182,7 +184,7 @@ export default function SalesPage() {
                 <div className="slds-m-bottom_large">
                     <button
                         className="slds-button slds-button_neutral"
-                        onClick={() => navigate('/dashboard')}
+                        onClick={() => navigate(`/dashboard/${storeId}`)}
                     >
                         ← Back to Dashboard
                     </button>
@@ -191,7 +193,7 @@ export default function SalesPage() {
                 <div className="slds-m-bottom_large">
                     <button
                         className="slds-button slds-button_neutral slds-m-right_small"
-                        onClick={() => navigate('/sales-history')}
+                        onClick={() => navigate(`/sales-history/${storeId}`)}
                     >
                         Sales History
                     </button>
