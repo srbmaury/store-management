@@ -5,114 +5,121 @@ import { AuthContext } from '../../context/AuthContext';
 import PrivateRoute from '../PrivateRoute';
 
 function renderWithAuthContext({ user, initialEntries }) {
-  return render(
-    <AuthContext.Provider value={{ user }}>
-      <MemoryRouter initialEntries={initialEntries}>
-        <Routes>
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute allowedRoles={['admin']}>
-                <div>Dashboard</div>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/sales"
-            element={
-              <PrivateRoute allowedRoles={['admin', 'staff']}>
-                <div>Sales Page</div>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/storeListing"
-            element={
-              <PrivateRoute allowedRoles={['staff']}>
-                <div>StoreListing</div>
-              </PrivateRoute>
-            }
-          />
-          <Route path="/login" element={<div>Login Page</div>} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </MemoryRouter>
-    </AuthContext.Provider>
-  );
+	return render(
+		<AuthContext.Provider value={{ user }}>
+			<MemoryRouter initialEntries={initialEntries}>
+				<Routes>
+					<Route
+						path="/myStores"
+						element={
+							<PrivateRoute allowedRoles={['admin']}>
+								<div>My Stores Page</div>
+							</PrivateRoute>
+						}
+					/>
+					<Route
+						path="/dashboard/123"
+						element={
+							<PrivateRoute allowedRoles={['admin']}>
+								<div>Dashboard Page</div>
+							</PrivateRoute>
+						}
+					/>
+					<Route
+						path="/inventory/123"
+						element={
+							<PrivateRoute allowedRoles={['admin']}>
+								<div>Inventory Page</div>
+							</PrivateRoute>
+						}
+					/>
+					<Route
+						path="/sales/123"
+						element={
+							<PrivateRoute allowedRoles={['admin', 'staff']}>
+								<div>Sales Page</div>
+							</PrivateRoute>
+						}
+					/>
+					<Route
+						path="/storeListing"
+						element={
+							<PrivateRoute allowedRoles={['staff']}>
+								<div>Store Listing Page</div>
+							</PrivateRoute>
+						}
+					/>
+					<Route path="/login" element={<div>Login Page</div>} />
+					<Route path="*" element={<Navigate to="/login" replace />} />
+				</Routes>
+			</MemoryRouter>
+		</AuthContext.Provider>
+	);
 }
 
 describe('PrivateRoute', () => {
-  it('redirects to /login if user is not logged in', () => {
-    renderWithAuthContext({
-      user: null,
-      initialEntries: ['/dashboard'],
-    });
+	it('redirects to /login if user is not logged in', () => {
+		renderWithAuthContext({
+			user: null,
+			initialEntries: ['/dashboard/123'],
+		});
+		expect(screen.getByText('Login Page')).toBeInTheDocument();
+	});
 
-    expect(screen.getByText('Login Page')).toBeInTheDocument();
-  });
+	it('redirects to /login if user.token is falsy', () => {
+		renderWithAuthContext({
+			user: { role: 'admin', token: '' },
+			initialEntries: ['/dashboard/123'],
+		});
+		expect(screen.getByText('Login Page')).toBeInTheDocument();
+	});
 
-  it('redirects to /login if user.token is falsy', () => {
-    renderWithAuthContext({
-      user: { role: 'admin', token: '' },
-      initialEntries: ['/dashboard'],
-    });
+	it('redirects to /myStores if user role is not allowed and role is admin', () => {
+		renderWithAuthContext({
+			user: { role: 'admin', token: 'token123' },
+			initialEntries: ['/storeListing'], // storeListing is staff only
+		});
+		expect(screen.getByText('My Stores Page')).toBeInTheDocument();
+	});
 
-    expect(screen.getByText('Login Page')).toBeInTheDocument();
-  });
+	it('redirects to /login if user role is not allowed and role is staff', () => {
+		renderWithAuthContext({
+			user: { role: 'staff', token: 'token123', storeId: 's1' },
+			initialEntries: ['/dashboard/123'], // dashboard admin only
+		});
+		expect(screen.getByText('Login Page')).toBeInTheDocument();
+	});
 
-    it('redirects to /dashboard if user.role is not in allowedRoles and role is not "staff"', () => {
-    renderWithAuthContext({
-        user: { role: 'admin', token: 'abc123' },
-        initialEntries: ['/storeListing'],  // Try to access storeListing (staff only)
-    });
+	it('forbids staff without storeId from accessing routes except /storeListing', () => {
+		renderWithAuthContext({
+			user: { role: 'staff', token: 'token123', storeId: null },
+			initialEntries: ['/sales/123'], // sales allowed but staff must have storeId
+		});
+		expect(screen.getByText('Store Listing Page')).toBeInTheDocument();
+	});
 
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    });
+	it('forbids staff with storeId from accessing /storeListing', () => {
+		renderWithAuthContext({
+			user: { role: 'staff', token: 'token123', storeId: '123' },
+			initialEntries: ['/storeListing'], // should redirect to sales page
+		});
+		// The sales page is /sales/:storeId, so check text accordingly
+		expect(screen.getByText('Sales Page')).toBeInTheDocument();
+	});
 
-  it('redirects to /storeListing if user.role is "staff" but not allowed in allowedRoles', () => {
-    renderWithAuthContext({
-      user: { role: 'staff', token: 'abc123', _id: 's1', storeOwnerId: 's1' },
-      initialEntries: ['/dashboard'], // staff tries to access admin-only route
-    });
+	it('renders children for admin with correct role and token', () => {
+		renderWithAuthContext({
+			user: { role: 'admin', token: 'token123' },
+			initialEntries: ['/dashboard/123'],
+		});
+		expect(screen.getByText('Dashboard Page')).toBeInTheDocument();
+	});
 
-    expect(screen.getByText('StoreListing')).toBeInTheDocument();
-  });
-
-  it('renders the protected component if role is allowed and token is present', () => {
-    renderWithAuthContext({
-      user: { role: 'admin', token: 'xyz789' },
-      initialEntries: ['/dashboard'],
-    });
-
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-  });
-
-  describe('staff-specific edge cases', () => {
-    it('forces staff-without-storeOwnerId (storeOwnerId === _id) to /storeListing if they try to access other pages', () => {
-      renderWithAuthContext({
-        user: { role: 'staff', token: 'token123', _id: 's123', storeOwnerId: 's123' },
-        initialEntries: ['/sales'],
-      });
-
-      expect(screen.getByText('StoreListing')).toBeInTheDocument();
-    });
-
-    it('forces staff-with-storeOwnerId to /sales if they try to visit /storeListing', async () => {
-      renderWithAuthContext({
-        user: { role: 'staff', token: 'tok456', _id: 'staff1', storeOwnerId: 'owner42' },
-        initialEntries: ['/storeListing'],
-      });
-
-      expect(await screen.findByText('Sales Page')).toBeInTheDocument();
-    });
-
-    it('renders children for staff with storeOwnerId !== _id if path is not /storeListing', () => {
-      renderWithAuthContext({
-        user: { role: 'staff', token: 'tok999', _id: 'staff2', storeOwnerId: 'owner007' },
-        initialEntries: ['/sales'],
-      });
-
-      expect(screen.getByText('Sales Page')).toBeInTheDocument();
-    });
-  });
+	it('renders children for staff with storeId accessing allowed route', () => {
+		renderWithAuthContext({
+			user: { role: 'staff', token: 'token123', storeId: '123' },
+			initialEntries: ['/sales/123'],
+		});
+		expect(screen.getByText('Sales Page')).toBeInTheDocument();
+	});
 });

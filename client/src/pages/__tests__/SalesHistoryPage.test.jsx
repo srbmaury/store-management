@@ -6,6 +6,7 @@ import API from '../../utils/api';
 import { AuthContext } from '../../context/AuthContext';
 import { SalesContext } from '../../context/SalesContext';
 import { MemoryRouter } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 // Create a jest-style mock for navigate
 const navigateMock = vi.fn();
@@ -24,6 +25,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
         ...actual,
         useSearchParams: () => [{ get: () => '2' }],
         useNavigate: () => navigateMock,
+        useParams: () => ({ storeId: 'test-store' }),
     };
 });
 
@@ -38,6 +40,8 @@ vi.mock('../helper/SalesHistory', () => ({
         <div data-testid="sales-list">{JSON.stringify(salesHistory)}</div>
     ),
 }));
+
+vi.spyOn(toast, 'error').mockImplementation(() => {});
 
 describe('SalesHistoryPage', () => {
     const mockSalesData = {
@@ -139,24 +143,46 @@ describe('SalesHistoryPage', () => {
         expect(screen.getByTestId('sales-list')).toHaveTextContent('Alice');
     });
 
+    it('shows error toast when fetchSales fails', async () => {
+        API.get.mockRejectedValueOnce({
+            response: { data: { message: 'Mock error fetching sales' } },
+        });
+
+        renderWithContexts('admin');
+
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Mock error fetching sales');
+        });
+    });
+
+    it('shows error toast when fetchSales fails with no error message', async () => {
+        API.get.mockRejectedValueOnce({
+            response: { data: '' },
+        });
+
+        renderWithContexts('admin');
+
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Server error');
+        });
+    });
+
     it('navigates back to dashboard for admin, sales page for staff', async () => {
-        // Admin case
         renderWithContexts('admin');
         await waitFor(() => expect(API.get).toHaveBeenCalled());
 
         const backAdmin = screen.getByRole('button', { name: /← Back to Dashboard/i });
         fireEvent.click(backAdmin);
-        expect(navigateMock).toHaveBeenCalledWith('/dashboard');
+        expect(navigateMock).toHaveBeenCalledWith('/dashboard/test-store'); // <-- UPDATED
 
         vi.clearAllMocks();
 
-        // Staff case
         renderWithContexts('staff');
         await waitFor(() => expect(API.get).toHaveBeenCalled());
 
         const backStaff = screen.getByRole('button', { name: /← Sales Page/i });
         fireEvent.click(backStaff);
-        expect(navigateMock).toHaveBeenCalledWith('/sales');
+        expect(navigateMock).toHaveBeenCalledWith('/sales/test-store'); // <-- UPDATED
     });
 
     it('updates search input and calls setCustomerSearch', async () => {

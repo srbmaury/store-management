@@ -1,201 +1,126 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-const app = require('../app');
-const User = require('../models/User');
-const JoinRequest = require('../models/JoinRequest');
-const Inventory = require('../models/Inventory');
-import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from 'vitest';
-import { connectTestDb, clearDb, closeTestDb } from '../setup/testDb';
+process.env.JWT_SECRET = 'test_jwt_secret';
 
-let admin, staff, storeOwnerId, adminToken, staffToken;
+import request from 'supertest';
+import app from '../app';
+import { beforeAll, afterAll, describe, it, expect } from 'vitest';
+import { connectTestDb, closeTestDb } from '../setup/testDb';
+import { adminPayload, staffPayload } from '../setup/testUtils';
 
-beforeAll(async () => {
-    await connectTestDb();
-});
+describe('Join Request Routes', () => {
+    beforeAll(connectTestDb);
+    afterAll(closeTestDb);
 
-beforeEach(async () => {
-    // Create admin user (store owner)
-    admin = new User({
-        name: 'Admin',
-        email: 'admin@sales.com',
-        password: 'Password123!',
-        role: 'admin',
-        storeName: 'SaleStore',
-        address: '123 Sales St',
-        phone: '9999999999',
-    });
-    admin.storeOwnerId = admin._id;
-    await admin.save();
-    storeOwnerId = admin._id;
-    adminToken = jwt.sign({ _id: admin._id, storeOwnerId, role: 'admin' }, process.env.JWT_SECRET);
+    let adminToken, staffToken, storeId, joinRequestId;
 
-    // Create staff user
-    staff = new User({
-        name: 'Staff',
-        email: 'staff@sales.com',
-        password: 'Password123!',
-        role: 'staff',
-        phone: '8888888888',
-        storeOwnerId
-    });
-    await staff.save();
-    staffToken = jwt.sign({ _id: staff._id, storeOwnerId, role: 'staff' }, process.env.JWT_SECRET);
+    it('should register admin and staff, create store, and let staff send join request', async () => {
+        // Register Admin
+        const adminRes = await request(app).post('/api/auth/register').send(adminPayload);
+        expect(adminRes.statusCode).toBe(201);
+        adminToken = adminRes.body.token;
 
-    // Create inventory for the store owner (optional, if needed for your flow)
-    await Inventory.create({
-        name: 'Test Item',
-        category: 'TestCat',
-        price: 100,
-        stock: 50,
-        storeOwnerId,
-    });
-});
+        // Register Staff
+        const staffRes = await request(app).post('/api/auth/register').send(staffPayload);
+        expect(staffRes.statusCode).toBe(201);
+        staffToken = staffRes.body.token;
 
-afterEach(async () => {
-    await clearDb();
-});
+        // Admin creates a store
+        const storeRes = await request(app)
+            .post('/api/stores')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ name: 'Test Store', address: '123 Street' });
+        expect(storeRes.statusCode).toBe(201);
+        storeId = storeRes.body._id;
 
-afterAll(async () => {
-    await closeTestDb();
-});
-
-describe('JoinRequest API', () => {
-    describe('POST /api/join-requests', () => {
-        it('should send a new join request from staff to store owner', async () => {
-            const res = await request(app)
-                .post('/api/join-requests')
-                .set('Authorization', `Bearer ${staffToken}`)
-                .send({ storeOwnerId: storeOwnerId.toString() });
-
-            expect(res.statusCode).toBe(201);
-            expect(res.body.message).toBe('Request sent successfully');
-
-            const saved = await JoinRequest.findOne({ staffId: staff._id, storeOwnerId });
-            expect(saved).toBeTruthy();
-            expect(saved.status).toBe('pending');
-        });
-
-        it('should not allow sending duplicate pending requests', async () => {
-            // Send first request
-            await JoinRequest.create({ staffId: staff._id, storeOwnerId, status: 'pending' });
-
-            const res = await request(app)
-                .post('/api/join-requests')
-                .set('Authorization', `Bearer ${staffToken}`)
-                .send({ storeOwnerId: storeOwnerId.toString() });
-
-            expect(res.statusCode).toBe(400);
-            expect(res.body.message).toMatch(/already sent a request/i);
-        });
+        // Staff sends join request
+        const joinReqRes = await request(app)
+            .post('/api/join-requests')
+            .set('Authorization', `Bearer ${staffToken}`)
+            .send({ storeId });
+        expect(joinReqRes.statusCode).toBe(201);
+        expect(joinReqRes.body.message).toMatch(/request sent/i);
     });
 
-    describe('GET /api/join-requests/my-requests', () => {
-        it('should get all join requests sent by staff', async () => {
-            await JoinRequest.create({ staffId: staff._id, storeOwnerId, status: 'pending' });
-
-            const res = await request(app)
-                .get('/api/join-requests/my-requests')
-                .set('Authorization', `Bearer ${staffToken}`);
-
-            expect(res.statusCode).toBe(200);
-            expect(Array.isArray(res.body)).toBe(true);
-            expect(res.body.length).toBe(1);
-            expect(res.body[0].storeOwnerId.storeName).toBe('SaleStore');
-        });
+    it('should not allow duplicate pending join requests', async () => {
+        // Try sending join request again with same staff and store
+        const res = await request(app)
+            .post('/api/join-requests')
+            .set('Authorization', `Bearer ${staffToken}`)
+            .send({ storeId });
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toMatch(/already sent/i);
     });
 
-    describe('GET /api/join-requests/pending', () => {
-        it('should get all pending join requests for the store owner', async () => {
-            await JoinRequest.create({ staffId: staff._id, storeOwnerId: admin._id, status: 'pending' });
+    it('staff should get their own join requests', async () => {
+        const res = await request(app)
+            .get('/api/join-requests/my-requests')
+            .set('Authorization', `Bearer ${staffToken}`);
 
-            const res = await request(app)
-                .get('/api/join-requests/pending')
-                .set('Authorization', `Bearer ${adminToken}`);
-
-            expect(res.statusCode).toBe(200);
-            expect(Array.isArray(res.body)).toBe(true);
-            expect(res.body.length).toBe(1);
-            expect(res.body[0].staffId.email).toBe('staff@sales.com');
-        });
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toBeInstanceOf(Array);
+        expect(res.body.length).toBeGreaterThan(0);
+        expect(res.body[0]).toHaveProperty('storeId');
+        joinRequestId = res.body[0]._id;
     });
 
-    describe('PUT /api/join-requests/:requestId/status', () => {
-        it('should update join request status to approved by store owner', async () => {
-            const joinReq = await JoinRequest.create({ staffId: staff._id, storeOwnerId: admin._id, status: 'pending' });
+    it('admin should get pending join requests for their stores', async () => {
+        const res = await request(app)
+            .get('/api/join-requests/pending')
+            .set('Authorization', `Bearer ${adminToken}`);
 
-            const res = await request(app)
-                .put(`/api/join-requests/${joinReq._id}/status`)
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({ status: 'approved' });
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toBeInstanceOf(Array);
+        expect(res.body.length).toBeGreaterThan(0);
+        expect(res.body[0]).toHaveProperty('status', 'pending');
+    });
 
-            expect(res.statusCode).toBe(200);
-            expect(res.body.message).toBe('Request approved');
+    it('admin should approve a join request', async () => {
+        const res = await request(app)
+            .put(`/api/join-requests/${joinRequestId}/status`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ status: 'approved' });
 
-            const updated = await JoinRequest.findById(joinReq._id);
-            expect(updated.status).toBe('approved');
-        });
+        expect(res.statusCode).toBe(200);
+        expect(res.body.message).toMatch(/approved/i);
+    });
 
-        it('should not allow non-store-owner to update request status', async () => {
-            const joinReq = await JoinRequest.create({ staffId: staff._id, storeOwnerId: admin._id, status: 'pending' });
+    it('admin should reject a join request', async () => {
+        // Create another join request to test rejection
+        const secondJoinReqRes = await request(app)
+            .post('/api/join-requests')
+            .set('Authorization', `Bearer ${staffToken}`)
+            .send({ storeId });
+        expect(secondJoinReqRes.statusCode).toBe(201);
 
-            const res = await request(app)
-                .put(`/api/join-requests/${joinReq._id}/status`)
-                .set('Authorization', `Bearer ${staffToken}`) // staff tries to approve
-                .send({ status: 'approved' });
+        const getRequests = await request(app)
+            .get('/api/join-requests/my-requests')
+            .set('Authorization', `Bearer ${staffToken}`);
+        const reqToReject = getRequests.body.find(req => req.status === 'pending');
 
-            expect(res.statusCode).toBe(403);
-            expect(res.body.message).toMatch(/Access restricted to Admins only/i);
-        });
+        const res = await request(app)
+            .put(`/api/join-requests/${reqToReject._id}/status`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ status: 'rejected' });
 
-        it('should return 400 for invalid status update', async () => {
-            const joinReq = await JoinRequest.create({ staffId: staff._id, storeOwnerId: admin._id, status: 'pending' });
+        expect(res.statusCode).toBe(200);
+        expect(res.body.message).toMatch(/rejected/i);
+    });
 
-            const res = await request(app)
-                .put(`/api/join-requests/${joinReq._id}/status`)
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({ status: 'invalidstatus' });
+    it('should reject invalid status update', async () => {
+        const res = await request(app)
+            .put(`/api/join-requests/${joinRequestId}/status`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ status: 'invalidstatus' });
 
-            expect(res.statusCode).toBe(400);
-            expect(res.body.message).toMatch(/invalid status/i);
-        });
+        expect(res.statusCode).toBe(400);
+        expect(res.body.message).toMatch(/invalid status/i);
+    });
 
-        it('should return 404 if join request not found', async () => {
-            const fakeId = new mongoose.Types.ObjectId();
+    it('non-admin should not update join request status', async () => {
+        const res = await request(app)
+            .put(`/api/join-requests/${joinRequestId}/status`)
+            .set('Authorization', `Bearer ${staffToken}`)
+            .send({ status: 'approved' });
 
-            const res = await request(app)
-                .put(`/api/join-requests/${fakeId}/status`)
-                .set('Authorization', `Bearer ${adminToken}`)
-                .send({ status: 'approved' });
-
-            expect(res.statusCode).toBe(404);
-            expect(res.body.message).toMatch(/not found/i);
-        });
-
-        it('should not allow staff from another store to send join request to unrelated storeOwnerId', async () => {
-            const otherAdmin = new User({
-                name: 'Other Admin',
-                email: 'other@admin.com',
-                password: 'Pass123!',
-                phone: '7777777777',
-                storeName: 'OtherStore',
-                role: 'admin',
-            });
-
-            otherAdmin.storeOwnerId = otherAdmin._id;
-            await otherAdmin.save();
-
-            const joinReq = await JoinRequest.create({ staffId: staff._id, storeOwnerId: admin._id, status: 'pending' });
-            const otherAdminToken = jwt.sign({ _id: otherAdmin._id, storeOwnerId: otherAdmin.storeOwnerId, role: 'admin' }, process.env.JWT_SECRET);
-
-            const res = await request(app)
-                .put(`/api/join-requests/${joinReq._id}/status`)
-                .set('Authorization', `Bearer ${otherAdminToken}`)
-                .send({ status: 'approved' });
-
-            // Depending on your controller logic, might be 400 or 403
-            expect(res.statusCode).toBe(403);
-            expect(res.body.message).toMatch(/Not authorized/i);
-        });
+        expect(res.statusCode).toBe(403);
     });
 });

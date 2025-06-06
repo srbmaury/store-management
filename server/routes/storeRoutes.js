@@ -1,8 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { getAvailableStores } = require('../controllers/storeController');
-const { protect, staffOnly } = require('../middleware/authMiddleware');
 
-router.get('/available', protect, staffOnly, getAvailableStores);
+const { getAllStores, createStore, joinStore, getMyStores, getStore } = require('../controllers/storeController');
+const { protect, adminOnly, staffOnly } = require('../middleware/authMiddleware');
+
+router.get('/', protect, staffOnly, getAllStores);
+router.post('/', protect, adminOnly, createStore);
+router.post('/:id', protect, getStore);
+router.post('/:storeId/join', protect, staffOnly, joinStore);
+router.get('/my-stores', protect, adminOnly, getMyStores);
 
 module.exports = router;

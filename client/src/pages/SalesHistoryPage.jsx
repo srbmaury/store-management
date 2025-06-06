@@ -2,10 +2,11 @@ import { useEffect, useState, useContext } from 'react';
 import API from '../utils/api';
 import Spinner from '../utils/Spinner';
 import SalesHistory from './helper/SalesHistory';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { SalesContext } from '../context/SalesContext';
 import { useDebounce } from '../utils/useDebounce';
+import { toast } from 'react-toastify';
 
 export default function SalesHistoryPage() {
     const [loading, setLoading] = useState(true);
@@ -14,6 +15,7 @@ export default function SalesHistoryPage() {
 
     const initialPage = parseInt(searchParams.get('page')) || 1;
     const { user } = useContext(AuthContext);
+	const { storeId } = useParams();
 
     const {
         salesHistory,
@@ -38,12 +40,11 @@ export default function SalesHistoryPage() {
             setLoading(true);
             try {
                 const { data } = await API.get(
-                    `/sales?page=${salesPage}&limit=${salesLimit}&customerName=${debouncedCustomerName}`
-                );
+                    `/sales?page=${salesPage}&limit=${salesLimit}&customerName=${debouncedCustomerName}&storeId=${storeId}`);
                 setSalesHistory(data.sales);
                 setSalesTotalPages(data.totalPages);
             } catch (err) {
-                console.error(err);
+                toast.error(err?.response?.data?.message || 'Server error');
             } finally {
                 setLoading(false);
             }
@@ -61,7 +62,7 @@ export default function SalesHistoryPage() {
             <div className="slds-m-bottom_large">
                 <button
                     className="slds-button slds-button_neutral"
-                    onClick={() => navigate(user.role === 'admin' ? '/dashboard' : '/sales')}
+                    onClick={() => navigate(user.role === 'admin' ? `/dashboard/${storeId}` : `/sales/${storeId}`)}
                 >
                     ← {user.role === 'admin' ? 'Back to Dashboard' : 'Sales Page'}
                 </button>

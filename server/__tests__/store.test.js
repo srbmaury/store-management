@@ -1,76 +1,122 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from 'vitest';
-const jwt = require('jsonwebtoken');
-const request = require('supertest');
-const app = require('../app');
-const User = require('../models/User');
+process.env.JWT_SECRET = 'test_jwt_secret';
+
+import request from 'supertest';
+import app from '../app';
 import { connectTestDb, clearDb, closeTestDb } from '../setup/testDb';
+import { beforeAll, beforeEach, afterAll, describe, it, expect } from 'vitest';
+import { adminPayload, staffPayload } from '../setup/testUtils';
 
-let adminToken, staffToken, storeOwnerId;
+describe('Store Routes', () => {
+	beforeAll(connectTestDb);
+	afterAll(closeTestDb);
 
-beforeAll(async () => {
-  await connectTestDb();
-});
+	let adminToken, staffToken, storeId;
 
-beforeEach(async () => {
-  // Create admin user
-  const admin = new User({
-    name: 'Admin',
-    email: 'admin@sales.com',
-    password: 'Password123!',
-    role: 'admin',
-    storeName: 'SaleStore',
-    address: '123 Sales St',
-    phone: '9999999999',
-  });
-  admin.storeOwnerId = admin._id;
-  await admin.save();
+	beforeEach(async () => {
+		// Clear DB collections before each test
+		await clearDb();
 
-  storeOwnerId = admin._id;
-  adminToken = jwt.sign({ _id: admin._id, storeOwnerId, role: 'admin' }, process.env.JWT_SECRET);
+		// 1. Register and login admin
+		const adminRes = await request(app).post('/api/auth/register').send(adminPayload);
+		adminToken = adminRes.body.token;
 
-  // Create staff user
-  const staff = new User({
-    name: 'Staff',
-    email: 'staff@sales.com',
-    password: 'Password123!',
-    role: 'staff',
-    phone: '8888888888',
-    storeOwnerId
-  });
-  await staff.save();
-  staffToken = jwt.sign({ _id: staff._id, storeOwnerId, role: 'staff' }, process.env.JWT_SECRET);
-});
+		// 2. Register and login staff
+		const staffRes = await request(app).post('/api/auth/register').send(staffPayload);
+		staffToken = staffRes.body.token;
 
-afterEach(async () => {
-  await clearDb();
-});
+		// 3. Define store payload (no owner, no staff)
+		const storePayload = {
+			name: 'Test Store',
+			address: 'Test Address',
+		};
 
-afterAll(async () => {
-  await closeTestDb();
-});
+		// 4. Send POST request with Bearer token
+		const storeRes = await request(app)
+			.post('/api/stores')
+			.set('Authorization', `Bearer ${adminToken}`)
+			.send(storePayload);
 
-describe('GET /api/stores/available authorization', () => {
-  it('should allow access for staff role', async () => {
-    const res = await request(app)
-      .get('/api/stores/available')
-      .set('Authorization', `Bearer ${staffToken}`)
-      .expect(200);
+		// 5. Get store ID
+		storeId = storeRes.body._id.toString();
+	});
 
-    expect(Array.isArray(res.body)).toBe(true);
-  });
+	it('admin should be able to create a store', async () => {
+		const res = await request(app)
+			.post('/api/stores')
+			.set('Authorization', `Bearer ${adminToken}`)
+			.send({ name: 'Test Store', address: '123 Street' });
 
-  it('should deny access for admin role', async () => {
-    const res = await request(app)
-      .get('/api/stores/available')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(403);  // or whatever your middleware returns for forbidden
+		expect(res.statusCode).toBe(201);
+		expect(res.body.name).toBe('Test Store');
+		expect(res.body.address).toBe('123 Street');
+		expect(res.body.owner).toBeDefined();
+		storeId = res.body._id;
+	});
 
-    expect(res.body.message).toMatch(/Access restricted to Staff only/i);
-  });
+	it('staff should not be able to create a store', async () => {
+		const res = await request(app)
+			.post('/api/stores')
+			.set('Authorization', `Bearer ${staffToken}`)
+			.send({ name: 'Invalid Store', address: 'Nowhere' });
 
-  it('should deny access if no token provided', async () => {
-    await request(app)
-      .get('/api/stores/available')
-      .expect(401);
-  });
+		expect(res.statusCode).toBe(403);
+		expect(res.body.message).toMatch(/Access restricted to Admins only/i);
+	});
+
+	it('admin should fetch their own stores via /my-stores', async () => {
+		const res = await request(app)
+			.get('/api/stores/my-stores')
+			.set('Authorization', `Bearer ${adminToken}`);
+
+		expect(res.statusCode).toBe(200);
+		expect(res.body.stores.length).toBeGreaterThan(0);
+		expect(res.body.stores[0]._id).toBe(storeId);
+	});
+
+	it('staff should see list of all stores', async () => {
+		const res = await request(app)
+			.get('/api/stores')
+			.set('Authorization', `Bearer ${staffToken}`);
+
+		expect(res.statusCode).toBe(200);
+		expect(res.body.length).toBeGreaterThan(0);
+		expect(res.body[0].name).toBe('Test Store');
+	});
+
+	it('staff should be able to join a store', async () => {
+		const res = await request(app)
+			.post(`/api/stores/${storeId}/join`)
+			.set('Authorization', `Bearer ${staffToken}`);
+
+		expect(res.statusCode).toBe(200);
+		expect(res.body.message).toMatch(/joined store successfully/i);
+		expect(res.body.storeId).toBe(storeId);
+	});
+
+	it('should not allow staff to join same store twice', async () => {
+		// First join - should succeed
+		const firstJoin = await request(app)
+			.post(`/api/stores/${storeId}/join`)
+			.set('Authorization', `Bearer ${staffToken}`);
+
+		expect(firstJoin.statusCode).toBe(200); // optional sanity check
+
+		// Second join - should fail
+		const res = await request(app)
+			.post(`/api/stores/${storeId}/join`)
+			.set('Authorization', `Bearer ${staffToken}`);
+
+		expect(res.statusCode).toBe(400);
+		expect(res.body.message).toMatch(/already joined/i);
+	});
+
+	it('should fetch individual store data with /:id', async () => {
+		const res = await request(app)
+			.post(`/api/stores/${storeId}`)
+			.set('Authorization', `Bearer ${adminToken}`);
+
+		expect(res.statusCode).toBe(200);
+		expect(res.body.name).toBe('Test Store');
+		expect(res.body.address).toBe('Test Address');
+	});
 });

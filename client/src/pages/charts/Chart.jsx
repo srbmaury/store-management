@@ -22,10 +22,10 @@ export default function Chart({ title, chartType, setChartType, chartData, names
     return (
         <section className="slds-m-bottom_large">
             <h2 className="slds-text-heading_medium slds-m-bottom_small">{title}</h2>
-            <ChartToggleButtons
+            {chartType !== 'line' && <ChartToggleButtons
                 current={chartType}
                 onChange={setChartType}
-            />
+            />}
             <ChartContainer>
                 <ChartContainer>
                     {chartType === 'bar' && (

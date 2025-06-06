@@ -11,14 +11,10 @@ export default function AuthForm({ onSubmit, title }) {
         password: '',
         confirmPassword: '',
         phone: '',
-        storeName: '',
-        address: '',
     };
 
     const [form, setForm] = useState(defaultForm);
-
     const isRegister = title === 'Register';
-    const isAdmin = form.role === 'admin';
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -39,16 +35,12 @@ export default function AuthForm({ onSubmit, title }) {
     const registerFields = [
         { order: 1, name: 'name', label: 'Name', type: 'text', required: true },
         { order: 2, name: 'phone', label: 'Phone Number', type: 'tel', required: true, placeholder: '+1234567890' },
-        ...(isAdmin ? [
-            { order: 3, name: 'storeName', label: 'Store Name', type: 'text', required: true },
-            { order: 4, name: 'address', label: 'Address', type: 'textarea', rows: 2, required: true },
-        ] : []),
-        { order: 7, name: 'confirmPassword', label: 'Confirm Password', type: 'password', required: true },
+        { order: 5, name: 'confirmPassword', label: 'Confirm Password', type: 'password', required: true },
     ];
 
     const commonFields = [
-        { order: 5, name: 'email', label: 'Email', type: 'email', required: true },
-        { order: 6, name: 'password', label: 'Password', type: 'password', required: true },
+        { order: 3, name: 'email', label: 'Email', type: 'email', required: true },
+        { order: 4, name: 'password', label: 'Password', type: 'password', required: true },
     ];
 
     const fieldsToRender = isRegister ? [...registerFields, ...commonFields] : commonFields;
@@ -84,27 +76,6 @@ export default function AuthForm({ onSubmit, title }) {
                     {fieldsToRender
                         .sort((a, b) => a.order - b.order)
                         .map((field) => {
-                            if (field.type === 'textarea') {
-                                return (
-                                    <div key={field.name} className="slds-form-element slds-m-bottom_small">
-                                        <label className="slds-form-element__label" htmlFor={field.name}>
-                                            {field.label} <span style={{ color: 'red' }}>*</span>
-                                        </label>
-                                        <div className="slds-form-element__control">
-                                            <textarea
-                                                className="slds-textarea"
-                                                id={field.name}
-                                                name={field.name}
-                                                value={form[field.name]}
-                                                onChange={handleChange}
-                                                rows={field.rows}
-                                                required={field.required}
-                                            />
-                                        </div>
-                                    </div>
-                                );
-                            }
-
                             return (
                                 <div key={field.name} className="slds-form-element slds-m-bottom_small">
                                     <label className="slds-form-element__label" htmlFor={field.name}>

@@ -8,6 +8,7 @@ import LowStockAlert from './charts/LowStockAlert';
 import Chart from './charts/Chart';
 import { useState, useEffect } from 'react';
 import Spinner from '../utils/Spinner';
+import { useParams } from 'react-router-dom';
 
 export default function DashboardPage() {
 	const [inventory, setInventory] = useState([]);
@@ -23,6 +24,7 @@ export default function DashboardPage() {
 	const totalRevenue = salesHistory.reduce((acc, sale) => acc + (sale.totalAmount || 0), 0);
 	const totalInventoryItems = inventory.length;
 	const lowStockItems = Array.isArray(inventory) ? inventory.filter(item => item.stock <= 5) : [];
+	const { storeId } = useParams();
 
 	const recentSales = salesHistory
 		.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -98,20 +100,20 @@ export default function DashboardPage() {
 			setLoading(true);
 			try {
 				const [{ data: inventoryData }, { data: salesData }] = await Promise.all([
-					API.get('/inventory'),
-					API.get('/sales'),
+					API.get(`/inventory?storeId=${storeId}`),
+					API.get(`/sales?storeId=${storeId}`),
 				]);
 
 				setInventory(inventoryData.items || []);
 				setSalesHistory(salesData.sales || []);
 			} catch (err) {
-				toast.error(err ? 'Failed to fetch dashboard data' : 'Unknown error occurred');
+				toast.error(err?err.message:'Failed to fetch dashboard data');
 			} finally {
 				setLoading(false);
 			}
 		};
 		fetchData();
-	}, []);
+	}, [storeId]);
 
 	if (loading) {
 		return <Spinner text="Loading Dashboard..." />

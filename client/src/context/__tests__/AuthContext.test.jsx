@@ -3,99 +3,99 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import AuthProvider, { AuthContext } from '../AuthContext';
 
 describe('AuthProvider', () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
-
-  it('loads initial user from localStorage', () => {
-    const fakeUser = { name: 'Test User', token: 'abc123' };
-    localStorage.setItem('user', JSON.stringify(fakeUser));
-
-    let contextValue;
-    render(
-      <AuthProvider>
-        <AuthContext.Consumer>
-          {(value) => {
-            contextValue = value;
-            return null;
-          }}
-        </AuthContext.Consumer>
-      </AuthProvider>
-    );
-
-    expect(contextValue.user).toEqual(fakeUser);
-  });
-
-  it('login updates user and localStorage', () => {
-    let contextValue;
-    render(
-      <AuthProvider>
-        <AuthContext.Consumer>
-          {(value) => {
-            contextValue = value;
-            return null;
-          }}
-        </AuthContext.Consumer>
-      </AuthProvider>
-    );
-
-    const newUser = { name: 'New User', token: 'def456' };
-
-    act(() => {
-      contextValue.login(newUser);
+    beforeEach(() => {
+        localStorage.clear();
     });
 
-    expect(contextValue.user).toEqual(newUser);
-    expect(JSON.parse(localStorage.getItem('user'))).toEqual(newUser);
-  });
+    it('loads initial user from localStorage', () => {
+        const fakeUser = { name: 'Test User', token: 'abc123' };
+        localStorage.setItem('user', JSON.stringify(fakeUser));
 
-  it('logout clears user and localStorage', () => {
-    const fakeUser = { name: 'User', token: 'tok123' };
-    localStorage.setItem('user', JSON.stringify(fakeUser));
+        let contextValue;
+        render(
+            <AuthProvider>
+                <AuthContext.Consumer>
+                    {(value) => {
+                        contextValue = value;
+                        return null;
+                    }}
+                </AuthContext.Consumer>
+            </AuthProvider>
+        );
 
-    let contextValue;
-    render(
-      <AuthProvider>
-        <AuthContext.Consumer>
-          {(value) => {
-            contextValue = value;
-            return null;
-          }}
-        </AuthContext.Consumer>
-      </AuthProvider>
-    );
-
-    act(() => {
-      contextValue.logout();
+        expect(contextValue.user).toEqual(fakeUser);
     });
 
-    expect(contextValue.user).toBeNull();
-    expect(localStorage.getItem('user')).toBeNull();
-  });
+    it('login updates user and localStorage', () => {
+        let contextValue;
+        render(
+            <AuthProvider>
+                <AuthContext.Consumer>
+                    {(value) => {
+                        contextValue = value;
+                        return null;
+                    }}
+                </AuthContext.Consumer>
+            </AuthProvider>
+        );
 
-  it('updateUser merges user data and updates localStorage', () => {
-    const initialUser = { name: 'User', token: 'tok123' };
-    localStorage.setItem('user', JSON.stringify(initialUser));
+        const newUser = { name: 'New User', token: 'def456' };
 
-    let contextValue;
-    render(
-      <AuthProvider>
-        <AuthContext.Consumer>
-          {(value) => {
-            contextValue = value;
-            return null;
-          }}
-        </AuthContext.Consumer>
-      </AuthProvider>
-    );
+        act(() => {
+            contextValue.login(newUser);
+        });
 
-    const update = { name: 'Updated User' };
-
-    act(() => {
-      contextValue.updateUser(update);
+        expect(contextValue.user).toEqual(newUser);
+        expect(JSON.parse(localStorage.getItem('user'))).toEqual(newUser);
     });
 
-    expect(contextValue.user).toEqual({ ...initialUser, ...update });
-    expect(JSON.parse(localStorage.getItem('user'))).toEqual({ ...initialUser, ...update });
-  });
+    it('logout clears user and localStorage', () => {
+        const fakeUser = { name: 'User', token: 'tok123' };
+        localStorage.setItem('user', JSON.stringify(fakeUser));
+
+        let contextValue;
+        render(
+            <AuthProvider>
+                <AuthContext.Consumer>
+                    {(value) => {
+                        contextValue = value;
+                        return null;
+                    }}
+                </AuthContext.Consumer>
+            </AuthProvider>
+        );
+
+        act(() => {
+            contextValue.logout();
+        });
+
+        expect(contextValue.user).toBeNull();
+        expect(localStorage.getItem('user')).toBeNull();
+    });
+
+    it('updateUser merges user data and updates localStorage', () => {
+        const initialUser = { name: 'User', token: 'tok123' };
+        localStorage.setItem('user', JSON.stringify(initialUser));
+
+        let contextValue;
+        render(
+            <AuthProvider>
+                <AuthContext.Consumer>
+                    {(value) => {
+                        contextValue = value;
+                        return null;
+                    }}
+                </AuthContext.Consumer>
+            </AuthProvider>
+        );
+
+        const update = { name: 'Updated User' };
+
+        act(() => {
+            contextValue.updateUser(update);
+        });
+
+        expect(contextValue.user).toEqual({ ...initialUser, ...update });
+        expect(JSON.parse(localStorage.getItem('user'))).toEqual({ ...initialUser, ...update });
+    });
 });

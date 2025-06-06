@@ -17,6 +17,7 @@ const salesRoutes = require('./routes/salesRoutes');
 const storeRoutes = require('./routes/storeRoutes');
 const joinRequestRoutes = require('./routes/joinRequestRoutes');
 const testRoutes = require('./routes/testRoutes');
+const staffRoutes = require('./routes/staffRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/inventory', inventoryRoutes);
@@ -24,4 +25,6 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/stores', storeRoutes);
 app.use('/api/join-requests', joinRequestRoutes);
 app.use('/api/test', testRoutes);
+app.use('/api/staff', staffRoutes);
+
 module.exports = app;

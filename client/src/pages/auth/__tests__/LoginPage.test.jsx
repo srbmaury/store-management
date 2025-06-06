@@ -29,6 +29,16 @@ vi.mock('react-router-dom', async () => {
 const toastSuccessSpy = vi.spyOn(toastify.toast, 'success').mockImplementation(() => { });
 const toastErrorSpy = vi.spyOn(toastify.toast, 'error').mockImplementation(() => { });
 
+function renderLoginPage(loginMock) {
+        render(
+            <AuthContext.Provider value={{ login: loginMock }}>
+                <BrowserRouter>
+                    <LoginPage />
+                </BrowserRouter>
+            </AuthContext.Provider>
+        );
+}
+
 describe('LoginPage', () => {
     const loginMock = vi.fn();
 
@@ -38,14 +48,7 @@ describe('LoginPage', () => {
 
     it('handles successful login', async () => {
         API.post.mockResolvedValueOnce({ data: { role: 'admin', token: 'abc' } });
-
-        render(
-            <AuthContext.Provider value={{ login: loginMock }}>
-                <BrowserRouter>
-                    <LoginPage />
-                </BrowserRouter>
-            </AuthContext.Provider>
-        );
+        renderLoginPage(loginMock)
 
         // Simulate user input
         const emailInput = screen.getByLabelText(/email/i);
@@ -64,21 +67,34 @@ describe('LoginPage', () => {
             expect(submittedData.password).toBe('password123');
 
             expect(loginMock).toHaveBeenCalledWith({ role: 'admin', token: 'abc' });
-            expect(mockedNavigate).toHaveBeenCalledWith('/dashboard');
+            expect(mockedNavigate).toHaveBeenCalledWith('/myStores');
             expect(toastSuccessSpy).toHaveBeenCalledWith('Login successful! Welcome back 😊');
         });
     });
 
-    it('handles login failure', async () => {
-        API.post.mockRejectedValueOnce({ response: { data: { message: 'Invalid credentials' } } });
+    it('handles staff login and navigates to /storeListing', async () => {
+        API.post.mockResolvedValueOnce({ data: { role: 'staff', token: 'xyz' } });
+        renderLoginPage(loginMock)
 
-        render(
-            <AuthContext.Provider value={{ login: loginMock }}>
-                <BrowserRouter>
-                    <LoginPage />
-                </BrowserRouter>
-            </AuthContext.Provider>
-        );
+        const emailInput = screen.getByLabelText(/email/i);
+        const passwordInput = screen.getByLabelText(/password/i);
+        const submitButton = screen.getByRole('button', { name: /login/i });
+
+        await userEvent.type(emailInput, 'staff@example.com');
+        await userEvent.type(passwordInput, 'password456');
+        await userEvent.click(submitButton);
+
+        await waitFor(() => {
+            expect(API.post).toHaveBeenCalled();
+            expect(loginMock).toHaveBeenCalledWith({ role: 'staff', token: 'xyz' });
+            expect(mockedNavigate).toHaveBeenCalledWith('/storeListing');
+            expect(toastSuccessSpy).toHaveBeenCalledWith('Login successful! Welcome back 😊');
+        });
+    });
+
+    it('handles login failure with error message', async () => {
+        API.post.mockRejectedValueOnce({ response: { data: { message: 'Invalid credentials' } } });
+        renderLoginPage(loginMock)
 
         const emailInput = screen.getByLabelText(/email/i);
         const passwordInput = screen.getByLabelText(/password/i);
@@ -90,6 +106,23 @@ describe('LoginPage', () => {
 
         await waitFor(() => {
             expect(toastErrorSpy).toHaveBeenCalledWith('Invalid credentials');
+        });
+    });
+
+    it('handles login failure without error message', async () => {
+        API.post.mockRejectedValueOnce({ response: '' });
+        renderLoginPage(loginMock)
+
+        const emailInput = screen.getByLabelText(/email/i);
+        const passwordInput = screen.getByLabelText(/password/i);
+        const submitButton = screen.getByRole('button', { name: /login/i });
+
+        await userEvent.type(emailInput, 'admin@example.com');
+        await userEvent.type(passwordInput, 'wrongpassword');
+        await userEvent.click(submitButton);
+
+        await waitFor(() => {
+            expect(toastErrorSpy).toHaveBeenCalledWith('Login failed');
         });
     });
 });
