@@ -22,6 +22,10 @@ A robust store management system designed to streamline inventory, sales, and st
 - Add, edit, delete, and bulk upload inventory items.
 - Real-time stock updates during sales.
 
+### 🌐 Multi-Language Support:
+- Implemented using react-i18next for localization.
+- Supports multiple languages for a global user base.
+
 ### 💰 Sales Tracking
 - Record sales with customer details and itemized breakdowns.
 - Generate invoices for completed sales.
@@ -119,3 +123,8 @@ npm install            # install the dependencies
 npm run dev            # Start the backend server
 npm run test           # Run backend tests
 npm run test:coverage  # Generate backend code coverage report
+```
+
+## 🤝 Want to Contribute?
+
+Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
