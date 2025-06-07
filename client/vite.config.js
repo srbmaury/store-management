@@ -5,7 +5,7 @@ export default defineConfig({
 	plugins: [react()],
 	server: {
 		proxy: {
-			'/api': 'https://store-management-js3x.onrender.com/',
+			'/api': 'http://localhost:5000',
 		},
 	},
 	test: {
