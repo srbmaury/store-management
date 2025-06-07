@@ -6,7 +6,7 @@ require('dotenv').config();
 const app = express();
 
 app.use(cors({
-	origin: 'https://store-management-copy-frontend.onrender.com', // your frontend URL
+	origin: 'https://store-management-frontend-x0e2.onrender.com', // your frontend URL
 }));
 app.use(express.json());
 
