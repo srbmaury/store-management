@@ -14,6 +14,7 @@ jobs:
       NODE_ENV: test
       MONGO_TEST_URI: ${{ secrets.MONGO_TEST_URI }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
     steps:
       - name: Checkout repository
