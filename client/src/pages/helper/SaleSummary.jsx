@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 export default function SaleSummary({
 	selectedItems,
 	inventory,
@@ -8,20 +10,21 @@ export default function SaleSummary({
 	handleSubmit,
 	clearCart
 }) {
+	const { t } = useTranslation();
 	return (
 		<>
-			<h3 className="slds-text-heading_small slds-m-top_large slds-m-bottom_small">Selected Items</h3>
+			<h3 className="slds-text-heading_small slds-m-top_large slds-m-bottom_small">{t('selectedItems')}</h3>
 
 			{selectedItems.length === 0 ? (
-				<p>No items selected.</p>
+				<p>{t('noItemsSelected')}</p>
 			) : (
 				<table className="slds-table slds-table_cell-buffer slds-table_bordered slds-m-bottom_medium">
 					<thead>
 						<tr>
-							<th>Item</th>
-							<th>Quantity</th>
-							<th>Price</th>
-							<th>Total</th>
+							<th>{t('item')}</th>
+							<th>{t('quantity')}</th>
+							<th>{t('price')}</th>
+							<th>{t('total')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -51,16 +54,16 @@ export default function SaleSummary({
 			)}
 
 			<div className="slds-m-bottom_large" style={{ fontWeight: '700', fontSize: '1.25rem' }}>
-				Total: ₹{totalAmount.toFixed(2)}
+				{t('total')}: ₹{totalAmount.toFixed(2)}
 			</div>
 
 			<label className="slds-form-element__label" htmlFor="customerName">
-				Customer Name
+				{t('customerName')}
 			</label>
 			<input
 				id="customerName"
 				className="slds-input slds-m-bottom_medium"
-				placeholder="Enter customer name"
+				placeholder={t('enterCustomerName')}
 				value={customerName}
 				onChange={(e) => setCustomerName(e.target.value)}
 			/>
@@ -70,7 +73,7 @@ export default function SaleSummary({
 				onClick={handleSubmit}
 				disabled={selectedItems.length === 0}
 			>
-				Submit Sale
+				{t('submitSale')}
 			</button>
 
 			<button
@@ -78,7 +81,7 @@ export default function SaleSummary({
 				onClick={clearCart}
 				disabled={selectedItems.length === 0}
 			>
-				Clear Cart
+				{t('clearCart')}
 			</button>
 		</>
 	);

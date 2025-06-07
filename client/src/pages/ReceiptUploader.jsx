@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Tesseract from 'tesseract.js';
 import stringSimilarity from 'string-similarity';
+import { useTranslation } from 'react-i18next';
 
 const ReceiptUploader = ({ inventory = [], onCartUpdate }) => {
     const [image, setImage] = useState(null);
@@ -8,6 +9,7 @@ const ReceiptUploader = ({ inventory = [], onCartUpdate }) => {
     const [extractedItems, setExtractedItems] = useState([]);
     const [errors, setErrors] = useState([]);
     const [unmatchedItems, setUnmatchedItems] = useState([]);
+    const { t } = useTranslation();
 
     const handleImageChange = (e) => {
         setImage(e.target.files[0]);
@@ -74,12 +76,18 @@ const ReceiptUploader = ({ inventory = [], onCartUpdate }) => {
 
     return (
         <div className="slds-box slds-theme_default slds-p-around_medium slds-m-top_medium">
-            <h2 className="slds-text-heading_medium slds-m-bottom_medium">Upload Receipt</h2>
+            <h2 className="slds-text-heading_medium slds-m-bottom_medium">{t('uploadReceipt')}</h2>
 
             <div className="slds-form-element slds-m-bottom_medium">
-                <label className="slds-form-element__label" htmlFor="receipt-upload">Receipt Image</label>
+                <label className="slds-form-element__label" htmlFor="receipt-upload">{t('receiptImage')}</label>
                 <div className="slds-form-element__control">
-                    <input id="receipt-upload" type="file" accept="image/*" onChange={handleImageChange} className="slds-input" />
+                    <input
+                        id="receipt-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="slds-input"
+                    />
                 </div>
             </div>
 
@@ -88,15 +96,15 @@ const ReceiptUploader = ({ inventory = [], onCartUpdate }) => {
                 onClick={handleExtract}
                 disabled={!image || loading}
             >
-                {loading ? 'Extracting...' : 'Extract from Receipt'}
+                {loading ? t('extracting') : t('extractFromReceipt')}
             </button>
 
             {extractedItems.length > 0 && (
                 <div className="slds-m-top_medium">
-                    <h3 className="slds-text-title_caps slds-m-bottom_small">Matched Items</h3>
+                    <h3 className="slds-text-title_caps slds-m-bottom_small">{t('matchedItems')}</h3>
                     <div className="slds-grid slds-wrap slds-grid_vertical-align-center slds-border_bottom slds-m-bottom_small slds-p-around_x-small slds-text-title_bold">
-                        <div className="slds-col slds-size_1-of-2">Item Name</div>
-                        <div className="slds-col slds-size_1-of-2">Quantity</div>
+                        <div className="slds-col slds-size_1-of-2">{t('itemName')}</div>
+                        <div className="slds-col slds-size_1-of-2">{t('quantity')}</div>
                     </div>
                     {extractedItems.map((item, i) => (
                         <div
@@ -117,14 +125,14 @@ const ReceiptUploader = ({ inventory = [], onCartUpdate }) => {
                         </div>
                     ))}
                     <button className="slds-button slds-button_success slds-m-top_medium" onClick={handleUpdateCart}>
-                        Update Cart
+                        {t('updateCart')}
                     </button>
                 </div>
             )}
 
             {errors.length > 0 && (
                 <div className="slds-text-color_error slds-m-bottom_medium">
-                    <strong>Stock Issues:</strong>
+                    <strong>{t('stockIssues')}:</strong>
                     <ul className="slds-list_dotted slds-m-left_medium">
                         {errors.map((err, i) => <li key={i}>{err}</li>)}
                     </ul>
@@ -133,7 +141,7 @@ const ReceiptUploader = ({ inventory = [], onCartUpdate }) => {
 
             {unmatchedItems.length > 0 && (
                 <div className="slds-text-color_error slds-m-bottom_medium">
-                    <strong>Unmatched Items:</strong>
+                    <strong>{t('unmatchedItems')}:</strong>
                     <ul className="slds-list_dotted slds-m-left_medium">
                         {unmatchedItems.map((item, i) => <li key={i}>{item}</li>)}
                     </ul>
@@ -142,6 +150,7 @@ const ReceiptUploader = ({ inventory = [], onCartUpdate }) => {
 
         </div>
     );
+
 };
 
 export default ReceiptUploader;

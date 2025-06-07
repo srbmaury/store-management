@@ -1,15 +1,12 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const ITEMS_PER_PAGE = 8;
 
-export default function Items({
-	groupedInventory,
-	selectedItems,
-	handleAddItem,
-	handleDecreaseItem,
-}) {
+export default function Items({ groupedInventory, selectedItems, handleAddItem, handleDecreaseItem }) {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [visibleCount, setVisibleCount] = useState({}); // { category: number }
+	const { t } = useTranslation();
 
 	const handleLoadMore = (category) => {
 		setVisibleCount((prev) => ({
@@ -31,11 +28,11 @@ export default function Items({
 
 	return (
 		<>
-			<h3 className="slds-text-heading_small slds-m-bottom_small">Select Items</h3>
+			<h3 className="slds-text-heading_small slds-m-bottom_small">{t('selectItems')}</h3>
 			<input
 				type="text"
 				className="slds-input slds-m-bottom_medium"
-				placeholder="Search items..."
+				placeholder={t('searchItems')}
 				value={searchTerm}
 				onChange={(e) => setSearchTerm(e.target.value)}
 			/>
@@ -75,10 +72,10 @@ export default function Items({
 												{item.name}
 											</h4>
 											<p>
-												<strong>Price:</strong> ₹{item.price}
+												<strong>{t('price')}:</strong> ₹{item.price}
 											</p>
 											<p>
-												<strong>Stock:</strong> {item.stock}
+												<strong>{t('stock')}:</strong> {item.stock}
 											</p>
 
 											{currentQty > 0 ? (
@@ -110,8 +107,8 @@ export default function Items({
 											) : (
 												<button
 													className={`slds-button ${disableAdd
-															? "slds-button_disabled"
-															: "slds-button_neutral"
+														? "slds-button_disabled"
+														: "slds-button_neutral"
 														}`}
 													onClick={() => handleAddItem(item._id)}
 													disabled={disableAdd}
@@ -121,7 +118,7 @@ export default function Items({
 														right: "10px",
 													}}
 												>
-													{isOutOfStock ? "Out of Stock" : "Add"}
+													{isOutOfStock ? t('outOfStock') : t('add')}
 												</button>
 											)}
 										</div>
@@ -134,7 +131,7 @@ export default function Items({
 									className="slds-button slds-button_neutral slds-m-top_medium"
 									onClick={() => handleLoadMore(category)}
 								>
-									Load more
+									{t('loadMore')}
 								</button>
 							)}
 						</div>

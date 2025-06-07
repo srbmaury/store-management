@@ -3,10 +3,13 @@ import API from '../utils/api';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import Spinner from '../utils/Spinner';
+import { useTranslation } from 'react-i18next';
 
 export default function StoreListingPage() {
     const [stores, setStores] = useState([]);
     const [loading, setLoading] = useState(true);
+    const { t } = useTranslation();
 
     const { logout, updateUser } = useContext(AuthContext);
     const navigate = useNavigate();
@@ -39,7 +42,7 @@ export default function StoreListingPage() {
                 const enrichedStores = stores.map(store => ({
                     ...store,
                     status: requestMap[store._id] || 'none',
-                }));                
+                }));
                 setStores(enrichedStores);
             } catch (err) {
                 toast.error(err ? 'Failed to load stores or requests' : 'Unknown error occurred');
@@ -89,16 +92,15 @@ export default function StoreListingPage() {
         }
     };
 
-    if (loading) return <p>Loading stores...</p>;
-
     return (
         <div className="slds-p-around_large">
+            {loading && <Spinner text={t('loadingStores')} />}
             <button className="slds-button slds-button_destructive" onClick={handleLogout}>
-                Logout
+                {t('logout')}
             </button>
-            <h2 className="slds-text-heading_medium">Available Stores</h2>
+            <h2 className="slds-text-heading_medium">{t('availableStores')}</h2>
             {stores.length === 0 ? (
-                <p>No stores available right now.</p>
+                <p>{t('noStores')}</p>
             ) : (
                 <ul className="slds-list_vertical slds-has-dividers_top">
                     {stores.map(store => (
@@ -106,8 +108,8 @@ export default function StoreListingPage() {
                             <div className="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
                                 <div>
                                     <h2 className="slds-text-heading_small">{store.name}</h2>
-                                    <p className="slds-text-body_small">Owner: {store.owner.name}</p>
-                                    <p className="slds-text-body_small slds-text-color_weak">Address: {store.address}</p>
+                                    <p className="slds-text-body_small">{t('owner')}: {store.owner.name}</p>
+                                    <p className="slds-text-body_small slds-text-color_weak">{t('address')}: {store.address}</p>
                                 </div>
 
                                 <div>
@@ -116,29 +118,29 @@ export default function StoreListingPage() {
                                             className="slds-button slds-button_neutral"
                                             onClick={() => sendJoinRequest(store._id)}
                                         >
-                                            Request to Join
+                                            {t('requestToJoin')}
                                         </button>
                                     ) : (
                                         <>
                                             {store.status === 'pending' && (
-                                                <span className="slds-badge slds-theme_warning">Pending</span>
+                                                <span className="slds-badge slds-theme_warning">{t('pending')}</span>
                                             )}
                                             {store.status === 'approved' && (
                                                 <>
-                                                    <span className="slds-badge slds-theme_success">Approved</span>
+                                                    <span className="slds-badge slds-theme_success">{t('approved')}</span>
                                                     <button
                                                         className="slds-button slds-button_brand slds-m-horizontal_medium"
                                                         onClick={() => joinStore(store._id)}
                                                     >
-                                                        Join Store
+                                                        {t('joinStore')}
                                                     </button>
                                                 </>
                                             )}
                                             {store.status === 'rejected' && (
-                                                <span className="slds-badge slds-theme_error">Rejected</span>
+                                                <span className="slds-badge slds-theme_error">{t('rejected')}</span>
                                             )}
                                             {store.status === 'joined' && (
-                                                <span className="slds-badge slds-theme_info">Joined</span>
+                                                <span className="slds-badge slds-theme_info">{t('joined')}</span>
                                             )}
                                         </>
                                     )}
