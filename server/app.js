@@ -6,26 +6,9 @@ require('dotenv').config();
 const app = express();
 
 app.use(cors({
-	origin: 'https://store-management-frontend-x0e2.onrender.com', // your frontend URL
+	origin: 'https://studious-guide-947745jgvgvh7v7r-5173.app.github.dev', // your frontend URL
 }));
 app.use(express.json());
-
-// -------------------------- DEPLOYMENT ---------------------------
-const __dirname1 = path.resolve();
-
-if (process.env.NODE_ENV === "production") {
-	app.use(express.static(path.join(__dirname1, "client", "dist"))); // Vite builds to dist
-
-	// SPA fallback route
-	app.get('/{*any}', (req, res) => {
-		res.sendFile(path.join(__dirname1, 'client', 'dist', 'index.html'));
-	});
-} else {
-	app.get("/", (req, res) => {
-		res.send("API is running successfully");
-	});
-}
-// -------------------------- DEPLOYMENT ---------------------------
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -43,5 +26,22 @@ app.use('/api/stores', storeRoutes);
 app.use('/api/join-requests', joinRequestRoutes);
 app.use('/api/test', testRoutes);
 app.use('/api/staff', staffRoutes);
+
+// -------------------------- DEPLOYMENT ---------------------------
+const __dirname1 = path.resolve();
+
+if (process.env.NODE_ENV === "production") {
+	app.use(express.static(path.join(__dirname1, "client", "dist"))); // Vite builds to dist
+
+	// SPA fallback route
+	app.get('/{*any}', (req, res) => {
+		res.sendFile(path.join(__dirname1, 'client', 'dist', 'index.html'));
+	});
+} else {
+	app.get("/", (req, res) => {
+		res.send("API is running successfully");
+	});
+}
+// -------------------------- DEPLOYMENT ---------------------------
 
 module.exports = app;
