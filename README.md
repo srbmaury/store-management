@@ -123,6 +123,7 @@ npm install            # install the dependencies
 npm run dev            # Start the backend server
 npm run test           # Run backend tests
 npm run test:coverage  # Generate backend code coverage report
+```
 
 ## 🤝 Want to Contribute?
 
