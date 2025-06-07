@@ -38,7 +38,7 @@ describe('AdminJoinRequests', () => {
 	it('displays loading state initially', async () => {
 		API.get.mockReturnValue(new Promise(() => { })); // never resolves
 		renderWithRouter(<AdminJoinRequests />);
-		expect(screen.getByText('Loading...')).toBeInTheDocument();
+		expect(screen.getByText('Loading join requests...')).toBeInTheDocument();
 	});
 
 	it('displays no requests message if list is empty', async () => {

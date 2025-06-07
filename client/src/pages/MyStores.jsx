@@ -113,7 +113,7 @@ export default function MyStoresPage() {
             {loading ? (
                 <Spinner text={t('loadingMyStores')} />
             ) : stores.length === 0 ? (
-                <p>{t('noStores')}</p>
+                <p>{t('noStoresAdmin')}</p>
             ) : (
                 <div className="slds-grid slds-wrap slds-gutters">
                     {stores.map((store) => (
