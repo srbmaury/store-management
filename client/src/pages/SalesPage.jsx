@@ -8,13 +8,15 @@ import SaleSummary from './helper/SaleSummary';
 import ReceiptUploader from './ReceiptUploader';
 import { AuthContext } from '../context/AuthContext';
 import { SalesContext } from '../context/SalesContext';
+import { useTranslation } from 'react-i18next';
 
 export default function SalesPage() {
     const [inventory, setInventory] = useState([]);
     const [selectedItems, setSelectedItems] = useState([]);
     const [customerName, setCustomerName] = useState('Store Customer');
     const [loading, setLoading] = useState(true);
-	const { storeId } = useParams();
+    const { storeId } = useParams();
+    const { t } = useTranslation();
 
     const {
         setSalesHistory,
@@ -170,15 +172,12 @@ export default function SalesPage() {
         toast.info('Cart cleared');
     };
 
-    if (loading) {
-        return <Spinner text="Loading Sales..." />;
-    }
-
     const groupedInventory = groupByCategory(inventory);
 
     return (
         <div className="slds-p-around_medium">
-            <h2 className="slds-text-heading_medium slds-m-bottom_large">Sales Entry</h2>
+            {loading && <Spinner text={t('loadingSalesPage')} />}
+            <h2 className="slds-text-heading_medium slds-m-bottom_large">{t('salesEntry')}</h2>
 
             {user.role === 'admin' ? (
                 <div className="slds-m-bottom_large">
@@ -186,7 +185,7 @@ export default function SalesPage() {
                         className="slds-button slds-button_neutral"
                         onClick={() => navigate(`/dashboard/${storeId}`)}
                     >
-                        ← Back to Dashboard
+                        {t('backToDashboard')}
                     </button>
                 </div>
             ) : (
@@ -195,13 +194,13 @@ export default function SalesPage() {
                         className="slds-button slds-button_neutral slds-m-right_small"
                         onClick={() => navigate(`/sales-history/${storeId}`)}
                     >
-                        Sales History
+                        {t('salesHistory')}
                     </button>
                     <button
                         className="slds-button slds-button_destructive"
                         onClick={handleLogout}
                     >
-                        Logout
+                        {t('logout')}
                     </button>
                 </div>
             )}

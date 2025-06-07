@@ -7,6 +7,7 @@ import { AuthContext } from '../context/AuthContext';
 import { SalesContext } from '../context/SalesContext';
 import { useDebounce } from '../utils/useDebounce';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 
 export default function SalesHistoryPage() {
     const [loading, setLoading] = useState(true);
@@ -15,7 +16,8 @@ export default function SalesHistoryPage() {
 
     const initialPage = parseInt(searchParams.get('page')) || 1;
     const { user } = useContext(AuthContext);
-	const { storeId } = useParams();
+    const { storeId } = useParams();
+    const { t } = useTranslation();
 
     const {
         salesHistory,
@@ -53,18 +55,17 @@ export default function SalesHistoryPage() {
         fetchSales();
     }, [salesPage, salesLimit, debouncedCustomerName]);
 
-    if (loading) return <Spinner text="Loading Sales..." />;
-
     return (
         <div className="slds-p-around_medium">
-            <h2 className="slds-text-heading_medium slds-m-bottom_medium">Sales History</h2>
+            {loading && <Spinner text={t('loadingSalesHistory')} />}
+            <h2 className="slds-text-heading_medium slds-m-bottom_medium">{t('salesHistory')}</h2>
 
             <div className="slds-m-bottom_large">
                 <button
                     className="slds-button slds-button_neutral"
                     onClick={() => navigate(user.role === 'admin' ? `/dashboard/${storeId}` : `/sales/${storeId}`)}
                 >
-                    ← {user.role === 'admin' ? 'Back to Dashboard' : 'Sales Page'}
+                    {user.role === 'admin' ? t('backToDashboard') : t('salesPage')}
                 </button>
             </div>
 
@@ -72,7 +73,7 @@ export default function SalesHistoryPage() {
                 <div>
                     <input
                         type="text"
-                        placeholder="Search customer..."
+                        placeholder={t('searchCustomer')}
                         value={customerSearch}
                         onChange={(e) => setCustomerSearch(e.target.value)}
                         className="slds-input"
@@ -84,15 +85,17 @@ export default function SalesHistoryPage() {
                         disabled={salesPage === 1}
                         onClick={() => setSalesPage(p => Math.max(1, p - 1))}
                     >
-                        ⬅ Prev
+                        ⬅ {t('prev')}
                     </button>
-                    <span className="slds-m-horizontal_small">Page {salesPage} of {salesTotalPages}</span>
+                    <span className="slds-m-horizontal_small">
+                        {t('page')} {salesPage} {t('of')} {salesTotalPages}
+                    </span>
                     <button
                         className="slds-button"
                         disabled={salesPage === salesTotalPages}
                         onClick={() => setSalesPage(p => Math.min(salesTotalPages, p + 1))}
                     >
-                        Next ➡
+                        {t('next')} ➡
                     </button>
                 </div>
             </div>

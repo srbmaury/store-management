@@ -9,6 +9,7 @@ import Chart from './charts/Chart';
 import { useState, useEffect } from 'react';
 import Spinner from '../utils/Spinner';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export default function DashboardPage() {
 	const [inventory, setInventory] = useState([]);
@@ -25,6 +26,7 @@ export default function DashboardPage() {
 	const totalInventoryItems = inventory.length;
 	const lowStockItems = Array.isArray(inventory) ? inventory.filter(item => item.stock <= 5) : [];
 	const { storeId } = useParams();
+	const { t } = useTranslation();
 
 	const recentSales = salesHistory
 		.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -107,7 +109,7 @@ export default function DashboardPage() {
 				setInventory(inventoryData.items || []);
 				setSalesHistory(salesData.sales || []);
 			} catch (err) {
-				toast.error(err?err.message:'Failed to fetch dashboard data');
+				toast.error(err ? err.message : 'Failed to fetch dashboard data');
 			} finally {
 				setLoading(false);
 			}
@@ -115,13 +117,11 @@ export default function DashboardPage() {
 		fetchData();
 	}, [storeId]);
 
-	if (loading) {
-		return <Spinner text="Loading Dashboard..." />
-	}
-
 	return (
 		<div>
 			<DashboardLayout>
+				{loading && <Spinner text={t('loadingDashboard')} />}
+
 				<KPICards
 					totalSalesCount={totalSalesCount}
 					totalRevenue={totalRevenue}
@@ -129,16 +129,12 @@ export default function DashboardPage() {
 					lowStockItems={lowStockItems}
 				/>
 
-				<RecentSalesTable
-					recentSales={recentSales}
-				/>
+				<RecentSalesTable recentSales={recentSales} />
 
-				<LowStockAlert
-					lowStockItems={lowStockItems}
-				/>
+				<LowStockAlert lowStockItems={lowStockItems} />
 
 				<Chart
-					title="Inventory by Category"
+					title={t('inventoryByCategory')}
 					chartType={inventoryChartType}
 					setChartType={setInventoryChartType}
 					chartData={inventoryChartData}
@@ -147,7 +143,7 @@ export default function DashboardPage() {
 				/>
 
 				<Chart
-					title="Sales Count (Last 7 Days)"
+					title={t('salesCountLast7Days')}
 					chartType={salesCountChartType}
 					setChartType={setSalesCountChartType}
 					chartData={salesCountChartData}
@@ -156,7 +152,7 @@ export default function DashboardPage() {
 				/>
 
 				<Chart
-					title="Top Selling Products"
+					title={t('topSellingProducts')}
 					chartType={topProductChartType}
 					setChartType={setTopProductChartType}
 					chartData={topProducts}
@@ -165,7 +161,7 @@ export default function DashboardPage() {
 				/>
 
 				<Chart
-					title="Revenue Trends (Last 7 Days)"
+					title={t('revenueTrendsLast7Days')}
 					chartType="line"
 					chartData={revenueTrendData}
 					names="date"
@@ -173,7 +169,7 @@ export default function DashboardPage() {
 				/>
 
 				<Chart
-					title="Sales by Category"
+					title={t('salesByCategory')}
 					chartType={categoryChartType}
 					setChartType={setCategoryChartType}
 					chartData={categorySalesData}

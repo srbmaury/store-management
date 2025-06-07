@@ -5,6 +5,7 @@ import API from '../utils/api';
 import { toast } from 'react-toastify';
 import Spinner from '../utils/Spinner';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export default function StaffPage() {
     const { user } = useContext(AuthContext); // assumes you store user and token in context
@@ -12,7 +13,8 @@ export default function StaffPage() {
     const [loading, setLoading] = useState(true);
     const [firingId, setFiringId] = useState(null);
     const navigate = useNavigate();
-	const { storeId } = useParams();
+    const { storeId } = useParams();
+    const { t } = useTranslation();
 
     useEffect(() => {
         const fetchStaff = async () => {
@@ -44,53 +46,53 @@ export default function StaffPage() {
         }
     };
 
-    if (loading) {
-        return <Spinner variant="brand" size="medium" />;
-    }
-
     return (
         <div className="slds-p-around_medium">
-            <h1 className="slds-text-heading_large slds-m-bottom_medium">Staff Members</h1>
+            {loading && <Spinner text={t('loadingStaffPage')}/>}
+            <h1 className="slds-text-heading_large slds-m-bottom_medium">{t('staffMembers')}</h1>
             <div className="slds-m-bottom_large">
                 <button
                     className="slds-button slds-button_neutral"
                     onClick={() => navigate(`/dashboard/${storeId}`)}
                     disabled={loading}
                 >
-                    ← Back to Dashboard
+                    {t('backToDashboard')}
                 </button>
             </div>
-            {staff.length == '0' ? 'No staff currently' : 
-            <div className="slds-box slds-box_xx-small">
-                <table className="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
-                    <thead>
-                        <tr className="slds-line-height_reset">
-                            <th scope="col"><div className="slds-truncate">Name</div></th>
-                            <th scope="col"><div className="slds-truncate">Email</div></th>
-                            <th scope="col"><div className="slds-truncate">Phone</div></th>
-                            <th scope="col"><div className="slds-truncate">Role</div></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {staff.map(user => (
-                            <tr key={user._id}>
-                                <td><div className="slds-truncate">{user.name}</div></td>
-                                <td><div className="slds-truncate">{user.email}</div></td>
-                                <td><div className="slds-truncate">{user.phone}</div></td>
-                                <td>
-                                    <button
-                                        className="slds-button slds-button_destructive"
-                                        onClick={() => handleFire(user._id)}
-                                        disabled={firingId === user._id}
-                                    >
-                                        {firingId === user._id ? 'Firing...' : 'Fire'}
-                                    </button>
-                                </td>
+            {staff.length === 0 ? (
+                <p>{t('noStaff')}</p>
+            ) : (
+                <div className="slds-box slds-box_xx-small">
+                    <table className="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
+                        <thead>
+                            <tr className="slds-line-height_reset">
+                                <th scope="col"><div className="slds-truncate">{t('name')}</div></th>
+                                <th scope="col"><div className="slds-truncate">{t('email')}</div></th>
+                                <th scope="col"><div className="slds-truncate">{t('phone')}</div></th>
+                                <th scope="col"><div className="slds-truncate">{t('actions')}</div></th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>}
+                        </thead>
+                        <tbody>
+                            {staff.map(user => (
+                                <tr key={user._id}>
+                                    <td><div className="slds-truncate">{user.name}</div></td>
+                                    <td><div className="slds-truncate">{user.email}</div></td>
+                                    <td><div className="slds-truncate">{user.phone}</div></td>
+                                    <td>
+                                        <button
+                                            className="slds-button slds-button_destructive"
+                                            onClick={() => handleFire(user._id)}
+                                            disabled={firingId === user._id}
+                                        >
+                                            {firingId === user._id ? t('firing') : t('fire')}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 }

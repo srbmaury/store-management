@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom';
 import Spinner from '../utils/Spinner';
 import * as XLSX from 'xlsx'; // Add this import
+import { useTranslation } from 'react-i18next';
 
 export default function InventoryPage() {
 	const [items, setItems] = useState([]);
@@ -29,6 +30,7 @@ export default function InventoryPage() {
 
 	const navigate = useNavigate();
 	const { storeId } = useParams();
+	const { t } = useTranslation();
 
 	const fetchInventory = async () => {
 		setLoading(true);
@@ -42,7 +44,7 @@ export default function InventoryPage() {
 					limit,
 					minStock: minStock || undefined,
 					maxStock: maxStock || undefined,
-					
+
 				},
 			});
 			setItems(data.items);
@@ -106,7 +108,7 @@ export default function InventoryPage() {
 			toast.success('Inventory updated from Excel');
 			await fetchInventory();
 		} catch (err) {
-			toast.error(err?err.message:'Failed to read Excel file');
+			toast.error(err ? err.message : 'Failed to read Excel file');
 		}
 	};
 
@@ -124,7 +126,7 @@ export default function InventoryPage() {
 		try {
 			if (editingId) {
 				// Update existing item
-				const { data } = await API.put(`/inventory/${editingId}`, {...preparedForm, storeId});
+				const { data } = await API.put(`/inventory/${editingId}`, { ...preparedForm, storeId });
 				setItems((prev) =>
 					prev.map((item) => (item._id === editingId ? data : item))
 				);
@@ -137,13 +139,13 @@ export default function InventoryPage() {
 						...preparedForm,
 						stock: Number(existingItem.stock) + Number(form.stock),
 					};
-					const { data } = await API.put(`/inventory/${existingItem._id}`, {...updatedItemData, storeId});
+					const { data } = await API.put(`/inventory/${existingItem._id}`, { ...updatedItemData, storeId });
 					setItems((prev) =>
 						prev.map((item) => (item._id === existingItem._id ? data : item))
 					);
 					toast.success('SKU exists - Stock added and item updated');
 				} else {
-					const { data } = await API.post('/inventory', {...preparedForm, storeId});
+					const { data } = await API.post('/inventory', { ...preparedForm, storeId });
 					setItems((prev) => [...prev, data]);
 					toast.success('Item added');
 				}
@@ -184,7 +186,7 @@ export default function InventoryPage() {
 
 	return (
 		<div className="slds-p-around_medium">
-			<h2 className="slds-text-heading_large">Inventory</h2>
+			<h2 className="slds-text-heading_large">{t('inventory')}</h2>
 
 			<div className="slds-m-bottom_large">
 				<button
@@ -192,7 +194,7 @@ export default function InventoryPage() {
 					onClick={() => navigate(`/dashboard/${storeId}`)}
 					disabled={loading}
 				>
-					← Back to Dashboard
+					{t('backToDashboard')}
 				</button>
 			</div>
 
@@ -205,19 +207,19 @@ export default function InventoryPage() {
 					}}
 					disabled={loading}
 				>
-					Add New Item
+					{t('addNewItem')}
 				</button>
 			</div>
 
 			<div className="slds-m-bottom_medium">
 				<label className="slds-button slds-button_outline-brand">
-					Upload Excel File
+					{t('uploadExcelFile')}
 					<input data-testid="excel-upload-input" type="file" accept=".xlsx,.xls" onChange={handleExcelUpload} hidden />
 				</label>
 			</div>
 
 			{/* Loading spinner */}
-			{loading && <Spinner text="Loading Inventory..." />}
+			{loading && <Spinner text={t('loadingInventory')} />}
 
 			{showForm && !loading && (
 				<form onSubmit={handleSubmit} className="slds-form slds-form_stacked slds-m-bottom_medium">
@@ -225,7 +227,7 @@ export default function InventoryPage() {
 						{['name', 'sku', 'price', 'stock', 'category'].map((field) => (
 							<div key={field} className="slds-col slds-size_1-of-1 slds-medium-size_1-of-5 slds-p-horizontal_x-small">
 								<label className="slds-form-element__label" htmlFor={field}>
-									{field.charAt(0).toUpperCase() + field.slice(1)}
+									{t(field)}
 								</label>
 								<input
 									className="slds-input"
@@ -244,7 +246,7 @@ export default function InventoryPage() {
 					</div>
 					<div className="slds-m-top_small">
 						<button type="submit" className="slds-button slds-button_brand slds-m-right_small" disabled={loading}>
-							{editingId ? 'Update' : 'Add'}
+							{editingId ? t('update') : t('add')}
 						</button>
 						<button
 							type="button"
@@ -252,7 +254,7 @@ export default function InventoryPage() {
 							onClick={resetForm}
 							disabled={loading}
 						>
-							Cancel
+							{t('cancel')}
 						</button>
 					</div>
 				</form>
@@ -263,7 +265,7 @@ export default function InventoryPage() {
 					<input
 						type="text"
 						className="slds-input"
-						placeholder="Search by name"
+						placeholder={t('searchByName')}
 						value={searchTerm}
 						onChange={(e) => {
 							setSearchTerm(e.target.value);
@@ -275,7 +277,7 @@ export default function InventoryPage() {
 					<input
 						type="text"
 						className="slds-input"
-						placeholder="Category"
+						placeholder={t('category')}
 						value={categoryFilter}
 						onChange={(e) => {
 							setCategoryFilter(e.target.value);
@@ -287,7 +289,7 @@ export default function InventoryPage() {
 					<input
 						type="number"
 						className="slds-input"
-						placeholder="Min Stock"
+						placeholder={t('minStock')}
 						value={minStock}
 						onChange={(e) => {
 							setMinStock(e.target.value);
@@ -299,7 +301,7 @@ export default function InventoryPage() {
 					<input
 						type="number"
 						className="slds-input"
-						placeholder="Max Stock"
+						placeholder={t('maxStock')}
 						value={maxStock}
 						onChange={(e) => {
 							setMaxStock(e.target.value);
@@ -312,18 +314,18 @@ export default function InventoryPage() {
 			<table className="slds-table slds-table_cell-buffer slds-table_bordered slds-m-top_medium">
 				<thead>
 					<tr className="slds-line-height_reset">
-						<th>Item Name</th>
-						<th>SKU</th>
-						<th>Price</th>
-						<th>Stock</th>
-						<th>Category</th>
-						<th>Actions</th>
+						<th>{t('name')}</th>
+						<th>{t('sku')}</th>
+						<th>{t('price')}</th>
+						<th>{t('stock')}</th>
+						<th>{t('category')}</th>
+						<th>{t('actions')}</th>
 					</tr>
 				</thead>
 				<tbody>
 					{items.length === 0 && (
 						<tr>
-							<td colSpan="6" className="slds-text-align_center">No items found</td>
+							<td colSpan="6" className="slds-text-align_center">{t('noItemsFound')}</td>
 						</tr>
 					)}
 					{items.map((item) => (
@@ -339,14 +341,14 @@ export default function InventoryPage() {
 									onClick={() => editItem(item)}
 									disabled={loading}
 								>
-									Edit
+									{t('edit')}
 								</button>
 								<button
 									className="slds-button slds-button_destructive"
 									onClick={() => deleteItem(item._id)}
 									disabled={loading}
 								>
-									Delete
+									{t('delete')}
 								</button>
 							</td>
 						</tr>
@@ -361,15 +363,15 @@ export default function InventoryPage() {
 						onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
 						disabled={page === 1 || loading}
 					>
-						Previous
+						{t('previous')}
 					</button>
-					<span className="slds-m-horizontal_small">Page {page} of {totalPages}</span>
+					<span className="slds-m-horizontal_small">{t('page')} {page} {t('of')} {totalPages}</span>
 					<button
 						className="slds-button slds-button_neutral"
 						onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
 						disabled={page === totalPages || loading}
 					>
-						Next
+						{t('next')}
 					</button>
 				</div>
 			)}

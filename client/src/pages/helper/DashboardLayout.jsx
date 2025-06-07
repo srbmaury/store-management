@@ -5,12 +5,14 @@ import API from '../../utils/api';
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 
 export default function DashboardLayout({ children }) {
 	const [storeName, setStoreName] = useState('');
 	const { user, logout } = useContext(AuthContext);
 	const navigate = useNavigate();
 	const { storeId } = useParams();
+	const { t } = useTranslation();
 
 	const handleLogout = () => {
 		logout();
@@ -42,18 +44,18 @@ export default function DashboardLayout({ children }) {
 				}}
 			>
 				<h4 className="slds-text-heading_large">
-					{storeName ? `${storeName}` : 'Loading store...'}
+					{storeName ? storeName : t('loadingStore', 'Loading store...')}
 				</h4>
 
 				<div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
 					<span className="slds-text-heading_small">
-						Welcome, {user?.name || 'User'}!
+						{t('welcome', { name: user?.name || 'User' })}
 					</span>
 					<button
 						className="slds-button slds-button_destructive"
 						onClick={handleLogout}
 					>
-						Logout
+						{t('logout', 'Logout')}
 					</button>
 				</div>
 			</div>
@@ -64,37 +66,37 @@ export default function DashboardLayout({ children }) {
 					className="slds-button slds-button_neutral slds-m-right_small"
 					onClick={() => navigate(`/inventory/${storeId}`)}
 				>
-					Inventory
+					{t('inventory', 'Inventory')}
 				</button>
 				<button
 					className="slds-button slds-button_neutral slds-m-right_small"
 					onClick={() => navigate(`/sales/${storeId}`)}
 				>
-					Sales
+					{t('sales', 'Sales')}
 				</button>
 				<button
 					className="slds-button slds-button_neutral slds-m-right_small"
 					onClick={() => navigate(`/sales-history/${storeId}`)}
 				>
-					Sales History
+					{t('salesHistory', 'Sales History')}
 				</button>
 				<button
 					className="slds-button slds-button_neutral slds-m-right_small"
 					onClick={() => navigate(`/joinRequests/${storeId}`)}
 				>
-					Join Requests
+					{t('joinRequests', 'Join Requests')}
 				</button>
 				<button
 					className="slds-button slds-button_neutral slds-m-right_small"
 					onClick={() => navigate(`/staff/${storeId}`)}
 				>
-					Staff
+					{t('staff', 'Staff')}
 				</button>
 				<button
 					className="slds-button slds-button_neutral slds-m-right_small"
 					onClick={() => navigate('/myStores')}
 				>
-					My Stores
+					{t('myStores', 'My Stores')}
 				</button>
 			</nav>
 
