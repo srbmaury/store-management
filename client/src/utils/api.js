@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+if (!import.meta.env.VITE_API_URL) {
+  throw new Error('VITE_API_URL is not defined');
+}
+
 const API = axios.create({
-	baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: import.meta.env.VITE_API_URL,
 });
 
 // Request interceptor to inject token
